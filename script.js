@@ -100,7 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       .forEach((id) => { const el = document.getElementById(id); if (el) el.volume = CFG.defaults.volume; });
   }
   if (CFG.defaults?.transparency != null) {
-    transparencySlider.value = CFG.defaults.transparency;
+    const sl = document.getElementById('transparency-slider');
+    if (sl) sl.value = CFG.defaults.transparency;
   }
 
   const startScreen = document.getElementById('start-screen');
