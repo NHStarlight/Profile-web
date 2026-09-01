@@ -1,0 +1,9 @@
+{
+  "name": "profile-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "guns.lol-style profile site with Discord sync + admin panel (Vercel)",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.10"
+  }
+}

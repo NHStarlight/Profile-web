@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Profile Editor</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0b0e14; color: #e7eaf2; min-height: 100vh;
+    font-family: 'Courier New', monospace; padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 4px; color: #00CED1; }
+  .sub { color: #7a8299; font-size: 12px; margin-bottom: 24px; }
+  .card {
+    background: #12161f; border: 1px solid #232a3a; border-radius: 10px;
+    padding: 18px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 13px; color: #9aa3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: #9aa3b8; margin: 10px 0 4px; }
+  input[type=text], input[type=password], input[type=url], input[type=number], textarea, select {
+    width: 100%; background: #0b0e14; border: 1px solid #2a3245; color: #e7eaf2;
+    border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; }
+  .check input { width: auto; }
+  button {
+    background: #00CED1; border: 0; color: #04252a; font-weight: bold;
+    font-family: inherit; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  button.secondary { background: #2a3245; color: #e7eaf2; }
+  button.danger { background: #7f1d1d; color: #fecaca; }
+  .status { font-size: 12px; margin-top: 10px; min-height: 16px; }
+  .status.ok { color: #34d399; }
+  .status.err { color: #f87171; }
+  .hidden { display: none; }
+  .list-item { display: flex; gap: 8px; margin-bottom: 8px; }
+  .list-item input { flex: 1; }
+  .list-item button { padding: 6px 10px; }
+  .preview-box { border: 1px dashed #2a3245; border-radius: 8px; padding: 12px; font-size: 12px; color: #9aa3b8; }
+  .preview-box img { max-width: 60px; border-radius: 6px; vertical-align: middle; }
+  code { color: #00CED1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⭐ Profile Editor</h1>
+  <p class="sub">Mọi thay đổi lưu vào database và áp dụng cho trang profile ngay — không cần sửa code hay deploy lại.</p>
+
+  <!-- LOGIN -->
+  <div id="login-view" class="card">
+    <h2>Đăng nhập</h2>
+    <label>Mật khẩu admin</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <div style="margin-top:14px;">
+      <button id="login-btn">Đăng nhập</button>
+    </div>
+    <div id="login-status" class="status"></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div id="editor-view" class="hidden">
+    <div class="card">
+      <h2>Thông tin chính</h2>
+      <label>Tiêu đề tab</label>
+      <input type="text" id="f-title">
+      <label>Tên hiển thị</label>
+      <input type="text" id="f-displayName">
+      <label>Câu mở đầu (màn hình start)</label>
+      <input type="text" id="f-startMessage">
+      <label>Bio (mỗi dòng một câu, sẽ luân phiên hiện)</label>
+      <textarea id="f-bioLines"></textarea>
+      <label>Ảnh profile (URL hoặc assets/...)</label>
+      <input type="text" id="f-profileImage">
+      <label>Số view ban đầu</label>
+      <input type="number" id="f-visitorBase">
+    </div>
+
+    <div class="card">
+      <h2>Discord Sync</h2>
+      <label>Discord User ID</label>
+      <input type="text" id="f-discordUserId">
+      <div class="check"><input type="checkbox" id="f-discordSync"><span>Tự động lấy avatar + badges từ Discord</span></div>
+      <div class="check"><input type="checkbox" id="f-lanyard"><span>Hiện presence / Spotify (cần user đã join discord.gg/lanyard)</span></div>
+      <div style="margin-top:12px;">
+        <button id="preview-btn" class="secondary">Xem trước dữ liệu Discord</button>
+      </div>
+      <div id="discord-preview" class="preview-box" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Badges thủ công (hiện sau badges Discord)</h2>
+      <div id="badges-list"></div>
+      <button class="secondary" id="add-badge">+ Thêm badge</button>
+      <p class="sub" style="margin-top:8px;">Định dạng: đường dẫn ảnh | chữ tooltip — vd: assets/verified.gif | Verified</p>
+    </div>
+
+    <div class="card">
+      <h2>Social links</h2>
+      <div id="socials-list"></div>
+      <button class="secondary" id="add-social">+ Thêm social</button>
+      <p class="sub" style="margin-top:8px;">Định dạng: icon | URL — vd: assets/discord.png | https://discord.gg/xxx</p>
+    </div>
+
+    <div class="card">
+      <h2>Media theo theme</h2>
+      <label>Home — video</label><input type="text" id="f-home-video">
+      <label>Home — nhạc</label><input type="text" id="f-home-music">
+      <label>Hacker — video</label><input type="text" id="f-hacker-video">
+      <label>Hacker — nhạc</label><input type="text" id="f-hacker-music">
+      <label>Rain — video</label><input type="text" id="f-rain-video">
+      <label>Rain — nhạc</label><input type="text" id="f-rain-music">
+      <label>Anime — video</label><input type="text" id="f-anime-video">
+      <label>Anime — nhạc</label><input type="text" id="f-anime-music">
+      <label>Car — video</label><input type="text" id="f-car-video">
+      <label>Car — nhạc</label><input type="text" id="f-car-music">
+    </div>
+
+    <div class="card">
+      <h2>Mặc định</h2>
+      <div class="row">
+        <div>
+          <label>Theme mở đầu</label>
+          <select id="f-theme">
+            <option value="home">home</option>
+            <option value="hacker">hacker</option>
+            <option value="rain">rain</option>
+            <option value="anime">anime</option>
+            <option value="car">car</option>
+          </select>
+        </div>
+        <div>
+          <label>Volume (0–1)</label>
+          <input type="number" id="f-volume" min="0" max="1" step="0.05">
+        </div>
+        <div>
+          <label>Transparency (0–1)</label>
+          <input type="number" id="f-transparency" min="0" max="1" step="0.05">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Nâng cao</h2>
+      <label>JSON cấu hình đầy đủ (sẽ ghi đè các field ở trên)</label>
+      <textarea id="f-json" style="min-height:200px;font-size:11px;"></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button id="save-btn">💾 Lưu thay đổi</button>
+      <button class="secondary" id="reload-btn">↻ Tải lại từ DB</button>
+      <button class="danger" id="logout-btn">Đăng xuất</button>
+    </div>
+    <div id="save-status" class="status"></div>
+    <p class="sub" style="margin-top:16px;"><a href="/" style="color:#00CED1;">← Về trang profile</a></p>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
