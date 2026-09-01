@@ -52,13 +52,6 @@ async function fetchViaBotToken(userId) {
   if (user.premium_type === 2 || user.premium_type === 3) {
     badges.unshift({ key: 'nitro', label: 'Nitro', image: 'https://cdn.discordapp.com/badge-icons/2ba85e8026a8614b640c2837bcdfe21b.png' });
   }
-  if (user.avatar_decoration_data?.asset) {
-    badges.unshift({
-      key: 'avatar_decoration',
-      label: 'Avatar Decoration',
-      image: `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatar_decoration_data.asset}.png?size=48&passthrough=true`,
-    });
-  }
 
   const ext = (user.avatar || '').startsWith('a_') ? 'gif' : 'png';
   return {
