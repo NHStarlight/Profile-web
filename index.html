@@ -274,6 +274,19 @@
             opacity: 1 !important;
         }
 
+        /* Avatar decoration from Discord — overlay PNG layered on the PFP
+           (transparent center), identical to Discord's own rendering. */
+        .profile-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 3;
+        }
+
         .profile-info {
             flex: 1;
             display: flex;

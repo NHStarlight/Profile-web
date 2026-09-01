@@ -72,6 +72,11 @@ async function fetchViaBotToken(userId) {
     bannerUrl: user.banner
       ? `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${user.banner.startsWith('a_') ? 'gif' : 'png'}?size=600`
       : null,
+    // Avatar decoration is NOT a badge — it is an overlay PNG (transparent
+    // center) that must sit ON TOP of the avatar, exactly like Discord shows.
+    decorationUrl: user.avatar_decoration_data?.asset
+      ? `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatar_decoration_data.asset}.png?size=256&passthrough=true`
+      : null,
     accentColor: user.accent_color ?? null,
     badges,
   };

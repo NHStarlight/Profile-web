@@ -184,10 +184,18 @@ async function previewDiscord() {
       return;
     }
     const badges = (p.badges || []).map((b) => `<img src="${b.image}" title="${b.label}">`).join(' ') || '(none)';
+    const avatar = p.avatarUrl
+      ? (p.decorationUrl
+          ? `<div style="position:relative;display:inline-block;width:60px;height:60px;vertical-align:middle;">
+               <img src="${p.avatarUrl}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
+               <img src="${p.decorationUrl}" style="position:absolute;top:0;left:0;width:60px;height:60px;border-radius:50%;">
+             </div>`
+          : `<img src="${p.avatarUrl}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">`)
+      : '(no avatar)';
     box.innerHTML = `
       ✅ Nguồn: <code>${p.source}</code><br>
-      <img src="${p.avatarUrl || ''}"> <strong>${p.displayName || p.username}</strong><br>
-      Avatar: ${p.avatarUrl ? '✅' : '—'} · Banner: ${p.bannerUrl ? '✅' : '—'}<br>
+      ${avatar} <strong>${p.displayName || p.username}</strong><br>
+      Decoration: ${p.decorationUrl ? '✅' : '—'} · Banner: ${p.bannerUrl ? '✅' : '—'}<br>
       Badges (${(p.badges || []).length}): ${badges}
       ${p.presence ? `<br>Status: ${p.presence.status}${p.presence.spotify ? ` · 🎵 ${p.presence.spotify.song} — ${p.presence.spotify.artist}` : ''}` : ''}
     `;

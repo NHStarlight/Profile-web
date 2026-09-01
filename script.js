@@ -197,6 +197,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         const p = j?.ok ? j.profile : null;
         if (!p?.available) return;
         if (p.avatarUrl) { armAvatarFallback(profilePicture); profilePicture.src = p.avatarUrl; }
+        // Avatar decoration overlays the PFP (transparent-center PNG), exactly
+        // like Discord renders it — NOT as a badge.
+        if (p.decorationUrl && profileContainer) {
+          let deco = profileContainer.querySelector('.profile-decoration');
+          if (!deco) {
+            deco = document.createElement('img');
+            deco.className = 'profile-decoration';
+            deco.alt = '';
+            deco.draggable = false;
+            profileContainer.appendChild(deco);
+          }
+          deco.src = p.decorationUrl;
+        }
         if (Array.isArray(p.badges) && p.badges.length) {
           const manual = CFG.badges || [];
           renderBadges([...p.badges, ...manual]);
