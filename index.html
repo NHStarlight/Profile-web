@@ -877,43 +877,8 @@
                         <div id="profile-name">JAQLIV</div>
                         <div class="badge-box">
                             <div class="badge-box-inner">
-                                <div class="badge-group">
-                                    <div class="badge-container">
-                                        <img src="assets/staff.gif" alt="Staff" class="badge">
-                                        <span class="tooltip">Staff Member</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/owner.gif" alt="Owner" class="badge">
-                                        <span class="tooltip">Owner</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/partner.gif" alt="Partner" class="badge">
-                                        <span class="tooltip">Partner</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/developer.png" alt="Developer" class="badge">
-                                        <span class="tooltip">Developer</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/bug_bounty.gif" alt="Bug Bounty" class="badge">
-                                        <span class="tooltip">Bug Bounty</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/hated_guns.gif" alt="Hated by Guns.lol" class="badge">
-                                        <span class="tooltip">Hated by Guns.lol</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/hated_fakecrime.gif" alt="Hated by Fakecrime.bio" class="badge">
-                                        <span class="tooltip">Hated by Fakecrime.bio</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/verified.gif" alt="Verified" class="badge">
-                                        <span class="tooltip">Verified</span>
-                                    </div>
-                                    <div class="badge-container">
-                                        <img src="assets/rule_maker.gif" alt="Rule Maker" class="badge">
-                                        <span class="tooltip">Rule Maker</span>
-                                    </div>
+                                <div class="badge-group" id="badge-group">
+                                    <!-- Badges are rendered by script.js from the site config (admin panel) -->
                                 </div>
                             </div>
                         </div>
@@ -926,19 +891,8 @@
 
             <div class="profile-footer">
 
-                <div class="social-links">
-                    <a href="https://discord.gg/motiongoats" target="_blank">
-                        <img src="assets/discord.png" alt="Discord" class="social-icon">
-                    </a>
-                    <a href="https://github.com/JAQLIV" target="_blank">
-                        <img src="assets/github.png" alt="GitHub" class="social-icon">
-                    </a>
-                    <a href="https://www.youtube.com/@jaqliv" target="_blank">
-                        <img src="assets/youtube.png" alt="YouTube" class="social-icon">
-                    </a>
-                    <a href="https://www.tiktok.com/@jaqliv" target="_blank">
-                        <img src="assets/tiktok.png" alt="TikTok" class="social-icon">
-                    </a>
+                <div class="social-links" id="social-links">
+                    <!-- Social links are rendered by script.js from the site config (admin panel) -->
                 </div>
 
 
@@ -1041,6 +995,13 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
+    <!-- Load site config (edited via /admin) before the profile script runs -->
+    <script>
+        fetch('/api/profile')
+            .then((r) => r.json())
+            .then((j) => { window.PF_CONFIG = (j && j.ok && j.config) || {}; })
+            .catch(() => { window.PF_CONFIG = {}; });
+    </script>
 
     <script src="script.js"></script>
 </body>

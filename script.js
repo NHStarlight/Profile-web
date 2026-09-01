@@ -1,5 +1,20 @@
 let hasUserInteracted = false;
 
+// Wait (max 2s) for /api/profile config loaded by the inline script in
+// index.html. Falls back to {} so the page still works offline/no-API.
+function pfWaitConfig() {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    (function poll() {
+      if (window.PF_CONFIG !== undefined || Date.now() - started > 2000) {
+        resolve(window.PF_CONFIG || {});
+      } else {
+        setTimeout(poll, 50);
+      }
+    })();
+  });
+}
+
 function initMedia() {
   console.log("initMedia called");
   const backgroundMusic = document.getElementById('background-music');
@@ -17,7 +32,19 @@ function initMedia() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const CFG = await pfWaitConfig();
+  document.title = CFG.title || document.title;
+
+  // Apply configured defaults before anything becomes interactive.
+  if (CFG.defaults?.volume != null) {
+    ['background-music', 'hacker-music', 'rain-music', 'anime-music', 'car-music']
+      .forEach((id) => { const el = document.getElementById(id); if (el) el.volume = CFG.defaults.volume; });
+  }
+  if (CFG.defaults?.transparency != null) {
+    transparencySlider.value = CFG.defaults.transparency;
+  }
+
   const startScreen = document.getElementById('start-screen');
   const startText = document.getElementById('start-text');
   const profileName = document.getElementById('profile-name');
@@ -50,8 +77,97 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsHint = document.getElementById('results-hint');
   const profilePicture = document.querySelector('.profile-picture');
   const profileContainer = document.querySelector('.profile-container');
-  const socialIcons = document.querySelectorAll('.social-icon');
-  const badges = document.querySelectorAll('.badge');
+  let socialIcons = document.querySelectorAll('.social-icon');
+  let badges = document.querySelectorAll('.badge');
+
+  // ---- Dynamic content from the admin-panel config ----
+  const badgeGroup = document.getElementById('badge-group');
+  const socialLinksEl = document.getElementById('social-links');
+
+  function renderBadges(list) {
+    if (!badgeGroup) return;
+    badgeGroup.innerHTML = (list || []).map((b) => `
+      <div class="badge-container">
+        <img src="${b.image}" alt="${b.label}" class="badge">
+        <span class="tooltip">${b.label}</span>
+      </div>
+    `).join('');
+    badges = badgeGroup.querySelectorAll('.badge');
+  }
+
+  function renderSocials(list) {
+    if (!socialLinksEl) return;
+    socialLinksEl.innerHTML = (list || []).map((s) => `
+      <a href="${s.url}" target="_blank" rel="noopener" title="${s.label}">
+        <img src="${s.image}" alt="${s.label}" class="social-icon">
+      </a>
+    `).join('');
+    socialIcons = socialLinksEl.querySelectorAll('.social-icon');
+  }
+
+  function renderSkills(list) {
+    const skillsBlock = document.getElementById('skills-block');
+    if (!skillsBlock || !Array.isArray(list) || list.length === 0) return;
+    skillsBlock.innerHTML = `
+      <h2 class="skills-title">Programming Skills</h2>
+      ${list.map((s) => `
+        <div class="skill">
+          <div class="skill-name">
+            <img src="${s.icon}" alt="${s.name}" class="skill-icon">
+            <span>${s.name}</span>
+            <span>${s.percent}%</span>
+          </div>
+          <div class="skill-bar-container">
+            <div id="${s.id}-bar" class="skill-bar"></div>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  }
+
+  renderBadges(CFG.badges || []);
+  renderSocials(CFG.socials || []);
+  if (CFG.showSkills !== false) renderSkills(CFG.skills || []);
+  if (CFG.profileImage) profilePicture.src = CFG.profileImage;
+
+  // Discord sync: merge live badges + avatar over the configured ones.
+  if (CFG.discordSync && CFG.discordUserId) {
+    fetch('/api/discord')
+      .then((r) => r.json())
+      .then((j) => {
+        const p = j?.ok ? j.profile : null;
+        if (!p?.available) return;
+        if (p.avatarUrl) profilePicture.src = p.avatarUrl;
+        if (Array.isArray(p.badges) && p.badges.length) {
+          const manual = CFG.badges || [];
+          renderBadges([...p.badges, ...manual]);
+        }
+        if (p.presence?.status) {
+          const dot = document.createElement('div');
+          dot.className = 'discord-status';
+          dot.textContent = `● ${p.presence.status}`;
+          dot.style.cssText = 'font-size:11px;opacity:.7;margin-top:4px;';
+          profileBio.after(dot);
+        }
+      })
+      .catch(() => {});
+  }
+
+  // Theme media map from config (video + music per theme).
+  const THEME_MEDIA = {
+    home:   { video: CFG.themes?.home?.video   || 'assets/background.mp4',        music: CFG.themes?.home?.music   || 'assets/background_music.mp3' },
+    hacker: { video: CFG.themes?.hacker?.video || 'assets/hacker_background.mp4', music: CFG.themes?.hacker?.music || 'assets/hacker_music.mp3' },
+    rain:   { video: CFG.themes?.rain?.video   || 'assets/rain_background.mov',   music: CFG.themes?.rain?.music   || 'assets/rain_music.mp3' },
+    anime:  { video: CFG.themes?.anime?.video  || 'assets/anime_background.mp4',  music: CFG.themes?.anime?.music  || 'assets/anime_music.mp3' },
+    car:    { video: CFG.themes?.car?.video    || 'assets/car_background.mp4',    music: CFG.themes?.car?.music    || 'assets/car_music.mp3' },
+  };
+  // Initial background + per-theme audio sources.
+  const initialTheme = THEME_MEDIA[CFG.defaults?.theme] || THEME_MEDIA.home;
+  const bgSource = backgroundVideo.querySelector('source');
+  if (bgSource && initialTheme.video) bgSource.src = initialTheme.video;
+  [['home', backgroundMusic], ['hacker', hackerMusic], ['rain', rainMusic], ['anime', animeMusic], ['car', carMusic]]
+    .forEach(([key, audio]) => { if (audio && THEME_MEDIA[key].music) audio.src = THEME_MEDIA[key].music; });
+
 
   
   const cursor = document.querySelector('.custom-cursor');
@@ -95,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  const startMessage = "Click here to see the motion baby";
+  const startMessage = CFG.startMessage || "Click here to see the motion baby";
   let startTextContent = '';
   let startIndex = 0;
   let startCursorVisible = true;
@@ -119,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initializeVisitorCounter() {
     let totalVisitors = localStorage.getItem('totalVisitorCount');
     if (!totalVisitors) {
-      totalVisitors = 921234;
+      totalVisitors = CFG.visitorBase ?? 921234;
       localStorage.setItem('totalVisitorCount', totalVisitors);
     } else {
       totalVisitors = parseInt(totalVisitors);
@@ -201,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
-  const name = "JAQLIV";
+  const name = CFG.displayName || "JAQLIV";
   let nameText = '';
   let nameIndex = 0;
   let isNameDeleting = false;
@@ -235,10 +351,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 500);
 
 
-  const bioMessages = [
-    "Fu*k Guns.lol & Fakecrime.bio got banned too often, so I created my own.",
-    "\"Hello, World!\""
-  ];
+  const bioMessages = (Array.isArray(CFG.bioLines) && CFG.bioLines.length)
+    ? CFG.bioLines
+    : [
+        "Fu*k Guns.lol & Fakecrime.bio got banned too often, so I created my own.",
+        "\"Hello, World!\""
+      ];
   let bioText = '';
   let bioIndex = 0;
   let bioMessageIndex = 0;
@@ -431,43 +549,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   homeButton.addEventListener('click', () => {
-    switchTheme('assets/background.mp4', backgroundMusic, 'home-theme');
+    switchTheme(THEME_MEDIA.home.video, backgroundMusic, 'home-theme');
   });
   homeButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    switchTheme('assets/background.mp4', backgroundMusic, 'home-theme');
+    switchTheme(THEME_MEDIA.home.video, backgroundMusic, 'home-theme');
   });
 
   hackerButton.addEventListener('click', () => {
-    switchTheme('assets/hacker_background.mp4', hackerMusic, 'hacker-theme', hackerOverlay, false);
+    switchTheme(THEME_MEDIA.hacker.video, hackerMusic, 'hacker-theme', hackerOverlay, false);
   });
   hackerButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    switchTheme('assets/hacker_background.mp4', hackerMusic, 'hacker-theme', hackerOverlay, false);
+    switchTheme(THEME_MEDIA.hacker.video, hackerMusic, 'hacker-theme', hackerOverlay, false);
   });
 
   rainButton.addEventListener('click', () => {
-    switchTheme('assets/rain_background.mov', rainMusic, 'rain-theme', snowOverlay, true);
+    switchTheme(THEME_MEDIA.rain.video, rainMusic, 'rain-theme', snowOverlay, true);
   });
   rainButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    switchTheme('assets/rain_background.mov', rainMusic, 'rain-theme', snowOverlay, true);
+    switchTheme(THEME_MEDIA.rain.video, rainMusic, 'rain-theme', snowOverlay, true);
   });
 
   animeButton.addEventListener('click', () => {
-    switchTheme('assets/anime_background.mp4', animeMusic, 'anime-theme');
+    switchTheme(THEME_MEDIA.anime.video, animeMusic, 'anime-theme');
   });
   animeButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    switchTheme('assets/anime_background.mp4', animeMusic, 'anime-theme');
+    switchTheme(THEME_MEDIA.anime.video, animeMusic, 'anime-theme');
   });
 
   carButton.addEventListener('click', () => {
-    switchTheme('assets/car_background.mp4', carMusic, 'car-theme');
+    switchTheme(THEME_MEDIA.car.video, carMusic, 'car-theme');
   });
   carButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    switchTheme('assets/car_background.mp4', carMusic, 'car-theme');
+    switchTheme(THEME_MEDIA.car.video, carMusic, 'car-theme');
   });
 
  
@@ -666,6 +784,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+
+  // Apply configured default transparency through the real handler.
+  if (CFG.defaults?.transparency != null) {
+    transparencySlider.dispatchEvent(new Event('input'));
+  }
 
   typeWriterStart();
 });
