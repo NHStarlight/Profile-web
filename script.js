@@ -23,14 +23,72 @@ function initMedia() {
     console.error("Media elements not found");
     return;
   }
-  backgroundMusic.volume = 0.3;
-  backgroundVideo.muted = true; 
+  backgroundMusic.volume = (window.PF_CONFIG?.defaults?.volume) ?? 0.3;
+  backgroundVideo.muted = true;
 
-  
+  // No video configured → show the animated gradient instead of black void.
+  if (!backgroundVideo.querySelector('source')?.getAttribute('src')) {
+    showBackgroundFallback();
+    return;
+  }
   backgroundVideo.play().catch(err => {
     console.error("Failed to play background video:", err);
   });
 }
+
+// Background fallback: animated gradient when a theme has no video or the
+// video URL fails (404/hotlink-blocked). Never leave the page black.
+function showBackgroundFallback() {
+  const fb = document.getElementById('bg-fallback');
+  const video = document.getElementById('background');
+  if (fb) fb.classList.add('visible');
+  if (video) {
+    try { video.pause(); } catch { /* noop */ }
+    video.style.display = 'none';
+  }
+}
+
+function hideBackgroundFallback() {
+  const fb = document.getElementById('bg-fallback');
+  const video = document.getElementById('background');
+  if (fb) fb.classList.remove('visible');
+  if (video) video.style.display = '';
+}
+
+// Set a theme's background video with graceful degradation.
+function applyBackground(videoSrc) {
+  const video = document.getElementById('background');
+  if (!video) return;
+  if (!videoSrc) {
+    showBackgroundFallback();
+    return;
+  }
+  video.onerror = () => {
+    console.warn("Background video failed to load:", videoSrc);
+    showBackgroundFallback();
+  };
+  hideBackgroundFallback();
+  video.style.display = '';
+  video.src = videoSrc;
+  video.play().catch(() => showBackgroundFallback());
+}
+
+// Avatar fallback: a starry placeholder if the configured image 404s.
+function armAvatarFallback(img) {
+  if (!img) return;
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+      '<defs><radialGradient id="g" cx="50%" cy="35%">' +
+      '<stop offset="0%" stop-color="#2a3a6e"/><stop offset="100%" stop-color="#0b1026"/>' +
+      '</radialGradient></defs>' +
+      '<rect width="100" height="100" fill="url(#g)"/>' +
+      '<circle cx="50" cy="50" r="44" fill="none" stroke="#00CED1" stroke-width="2" opacity="0.6"/>' +
+      '<text x="50" y="64" font-size="40" text-anchor="middle">\u2B50</text></svg>');
+  };
+}
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   const CFG = await pfWaitConfig();
@@ -113,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ${list.map((s) => `
         <div class="skill">
           <div class="skill-name">
-            <img src="${s.icon}" alt="${s.name}" class="skill-icon">
+            ${s.icon ? `<img src="${s.icon}" alt="${s.name}" class="skill-icon">` : ''}
             <span>${s.name}</span>
             <span>${s.percent}%</span>
           </div>
@@ -137,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .then((j) => {
         const p = j?.ok ? j.profile : null;
         if (!p?.available) return;
-        if (p.avatarUrl) profilePicture.src = p.avatarUrl;
+        if (p.avatarUrl) { armAvatarFallback(profilePicture); profilePicture.src = p.avatarUrl; }
         if (Array.isArray(p.badges) && p.badges.length) {
           const manual = CFG.badges || [];
           renderBadges([...p.badges, ...manual]);
@@ -163,10 +221,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   // Initial background + per-theme audio sources.
   const initialTheme = THEME_MEDIA[CFG.defaults?.theme] || THEME_MEDIA.home;
-  const bgSource = backgroundVideo.querySelector('source');
-  if (bgSource && initialTheme.video) bgSource.src = initialTheme.video;
+  applyBackground(initialTheme.video);
   [['home', backgroundMusic], ['hacker', hackerMusic], ['rain', rainMusic], ['anime', animeMusic], ['car', carMusic]]
     .forEach(([key, audio]) => { if (audio && THEME_MEDIA[key].music) audio.src = THEME_MEDIA[key].music; });
+
+  armAvatarFallback(profilePicture);
 
 
   
@@ -501,7 +560,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       duration: 0.5,
       ease: 'power2.in',
       onComplete: () => {
-        backgroundVideo.src = videoSrc;
+        backgroundVideo.pause();
+        applyBackground(videoSrc);
 
         if (currentAudio) {
           currentAudio.pause();

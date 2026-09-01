@@ -52,6 +52,35 @@
             pointer-events: none;
         }
 
+        /* Animated gradient backdrop shown when no video is configured or the
+           video fails to load — the page must never be a black void. */
+        #bg-fallback {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            display: none;
+            background:
+                radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,0.9), transparent 50%),
+                radial-gradient(1px 1px at 34% 68%, rgba(255,255,255,0.7), transparent 50%),
+                radial-gradient(2px 2px at 56% 14%, rgba(180,220,255,0.8), transparent 50%),
+                radial-gradient(1px 1px at 71% 46%, rgba(255,255,255,0.6), transparent 50%),
+                radial-gradient(2px 2px at 85% 78%, rgba(255,215,150,0.7), transparent 50%),
+                radial-gradient(1px 1px at 44% 88%, rgba(255,255,255,0.5), transparent 50%),
+                radial-gradient(1px 1px at 92% 18%, rgba(255,255,255,0.7), transparent 50%),
+                linear-gradient(160deg, #05070d 0%, #0b1026 38%, #191040 68%, #2a1052 88%, #05070d 100%);
+            background-size: 100% 100%;
+            animation: bgShift 18s ease-in-out infinite alternate;
+        }
+        #bg-fallback.visible { display: block; }
+        @keyframes bgShift {
+            from { filter: hue-rotate(0deg) brightness(1); }
+            to   { filter: hue-rotate(35deg) brightness(1.25); }
+        }
+
         .glitch-overlay {
             position: fixed;
             top: 0;
@@ -854,8 +883,10 @@
     <div class="container">
         
         <video id="background" autoplay loop muted playsinline webkit-playsinline>
-            <source src="assets/background.mp4" type="video/mp4">
+            <source src="" type="video/mp4">
         </video>
+
+        <div id="bg-fallback" aria-hidden="true"></div>
 
         
         <div class="glitch-overlay"></div>
