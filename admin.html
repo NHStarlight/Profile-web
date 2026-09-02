@@ -43,6 +43,8 @@
   .list-item button { padding: 6px 10px; }
   .preview-box { border: 1px dashed #2a3245; border-radius: 8px; padding: 12px; font-size: 12px; color: #9aa3b8; }
   .preview-box img { max-width: 60px; border-radius: 6px; vertical-align: middle; }
+  .upload-row { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+  .upload-row input[type=file] { flex: 1; font-size: 11px; color: #9aa3b8; }
   code { color: #00CED1; }
 </style>
 </head>
@@ -107,46 +109,27 @@
     </div>
 
     <div class="card">
-      <h2>Media theo theme</h2>
-      <p class="sub" style="margin-top:0;">Dán URL <b>trực tiếp</b> tới file (.mp4/.webm cho video, .mp3 cho nhạc — ví dụ từ catbox.moe, không phải link trang YouTube). <b>Bỏ trống</b> → nền gradient động / không nhạc.</p>
-      <label>Home — video</label><input type="text" id="f-home-video">
-      <label>Home — nhạc</label><input type="text" id="f-home-music">
-      <label>Hacker — video</label><input type="text" id="f-hacker-video">
-      <label>Hacker — nhạc</label><input type="text" id="f-hacker-music">
-      <label>Rain — video</label><input type="text" id="f-rain-video">
-      <label>Rain — nhạc</label><input type="text" id="f-rain-music">
-      <label>Anime — video</label><input type="text" id="f-anime-video">
-      <label>Anime — nhạc</label><input type="text" id="f-anime-music">
-      <label>Car — video</label><input type="text" id="f-car-video">
-      <label>Car — nhạc</label><input type="text" id="f-car-music">
-    </div>
-
-    <div class="card">
-      <h2>Mặc định</h2>
-      <div class="row">
-        <div>
-          <label>Theme mở đầu</label>
-          <select id="f-theme">
-            <option value="home">home</option>
-            <option value="hacker">hacker</option>
-            <option value="rain">rain</option>
-            <option value="anime">anime</option>
-            <option value="car">car</option>
-          </select>
-        </div>
-        <div>
-          <label>Volume (0–1)</label>
-          <input type="number" id="f-volume" min="0" max="1" step="0.05">
-        </div>
-        <div>
-          <label>Transparency (0–1)</label>
-          <input type="number" id="f-transparency" min="0" max="1" step="0.05">
-        </div>
+      <h2>Nền &amp; Nhạc</h2>
+      <label>Video nền (URL — file lớn nên dùng catbox.moe / link ngoài)</label>
+      <input type="url" id="f-backgroundVideo" placeholder="https://files.catbox.moe/xxx.mp4">
+      <div class="upload-row">
+        <input type="file" id="f-video-file" accept="video/mp4,video/webm" style="font-size:11px;">
+        <button class="secondary" id="upload-video-btn">⬆ Upload video (≤4MB)</button>
       </div>
+      <div id="upload-video-status" class="status"></div>
+
+      <label style="margin-top:16px;">Nhạc nền (URL hoặc upload — ≤4MB)</label>
+      <input type="url" id="f-audioUrl" placeholder="https://... /music.mp3 hoặc /api/media/...">
+      <div class="upload-row">
+        <input type="file" id="f-audio-file" accept="audio/*" style="font-size:11px;">
+        <button class="secondary" id="upload-audio-btn">⬆ Upload nhạc</button>
+      </div>
+      <div id="upload-audio-status" class="status"></div>
+      <p class="sub" style="margin-top:8px;">Bỏ trống = nền gradient động / không nhạc. Video lớn hơn 4MB hãy up lên catbox.moe rồi dán link.</p>
     </div>
 
     <div class="card">
-      <h2>Nâng cao</h2>
+      <h2>Nâng cao (JSON)</h2>
       <label>JSON cấu hình đầy đủ (sẽ ghi đè các field ở trên)</label>
       <textarea id="f-json" style="min-height:200px;font-size:11px;"></textarea>
     </div>

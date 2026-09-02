@@ -93,13 +93,8 @@ function fillForm(c) {
   $('f-discordUserId').value = c.discordUserId || '';
   $('f-discordSync').checked = !!c.discordSync;
   $('f-lanyard').checked = !!c.lanyard;
-  ['home', 'hacker', 'rain', 'anime', 'car'].forEach((k) => {
-    $(`f-${k}-video`).value = c.themes?.[k]?.video || '';
-    $(`f-${k}-music`).value = c.themes?.[k]?.music || '';
-  });
-  $('f-theme').value = c.defaults?.theme || 'home';
-  $('f-volume').value = c.defaults?.volume ?? 0.3;
-  $('f-transparency').value = c.defaults?.transparency ?? 0.7;
+  $('f-backgroundVideo').value = c.backgroundVideo || '';
+  $('f-audioUrl').value = c.audioUrl || '';
   renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'assets/icon.gif | Badge Name');
   renderList('socials-list', (c.socials || []).map((s) => `${s.image} | ${s.url}`), 'assets/icon.png | https://…');
   $('f-json').value = JSON.stringify(c, null, 2);
@@ -136,18 +131,8 @@ async function save() {
     merged.discordUserId = $('f-discordUserId').value.trim();
     merged.discordSync = $('f-discordSync').checked;
     merged.lanyard = $('f-lanyard').checked;
-    merged.themes = {
-      home:   { video: $('f-home-video').value,   music: $('f-home-music').value },
-      hacker: { video: $('f-hacker-video').value, music: $('f-hacker-music').value },
-      rain:   { video: $('f-rain-video').value,   music: $('f-rain-music').value },
-      anime:  { video: $('f-anime-video').value,  music: $('f-anime-music').value },
-      car:    { video: $('f-car-video').value,    music: $('f-car-music').value },
-    };
-    merged.defaults = {
-      theme: $('f-theme').value,
-      volume: parseFloat($('f-volume').value) || 0.3,
-      transparency: parseFloat($('f-transparency').value ?? 0.7),
-    };
+    merged.backgroundVideo = $('f-backgroundVideo').value.trim();
+    merged.audioUrl = $('f-audioUrl').value.trim();
     merged.badges = collectList('badges-list').map(parsePipe);
     merged.socials = collectList('socials-list').map(parseSocial);
     delete merged._source;
@@ -186,9 +171,9 @@ async function previewDiscord() {
     const badges = (p.badges || []).map((b) => `<img src="${b.image}" title="${b.label}">`).join(' ') || '(none)';
     const avatar = p.avatarUrl
       ? (p.decorationUrl
-          ? `<div style="position:relative;display:inline-block;width:60px;height:60px;vertical-align:middle;">
+          ? `<div style="position:relative;display:inline-block;width:60px;height:60px;vertical-align:middle;margin-right:8px;">
                <img src="${p.avatarUrl}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
-               <img src="${p.decorationUrl}" style="position:absolute;top:0;left:0;width:60px;height:60px;border-radius:50%;">
+               <img src="${p.decorationUrl}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92px;height:92px;border-radius:50%;object-fit:contain;pointer-events:none;">
              </div>`
           : `<img src="${p.avatarUrl}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">`)
       : '(no avatar)';
@@ -204,6 +189,43 @@ async function previewDiscord() {
   }
 }
 
+// ---------- Upload (music / video) ----------
+async function uploadFile(fileInputId, urlInputId, statusId) {
+  const status = $(statusId);
+  const input = $(fileInputId);
+  const file = input?.files?.[0];
+  if (!file) {
+    setStatus(status, 'Chưa chọn file.', false);
+    return;
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    setStatus(status, `File ${(file.size / 1048576).toFixed(1)}MB vượt 4MB — hãy up lên catbox.moe rồi dán link.`, false);
+    return;
+  }
+  setStatus(status, 'Đang upload…', true);
+  try {
+    const buf = await file.arrayBuffer();
+    let binary = '';
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    const dataBase64 = btoa(binary);
+    const r = await fetch('/api/admin/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: file.name, mime: file.type || 'application/octet-stream', dataBase64 }),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      $(urlInputId).value = j.url;
+      setStatus(status, `✅ Uploaded → ${j.url} (nhớ bấm Lưu)`, true);
+    } else {
+      setStatus(status, 'Lỗi: ' + (j.error || 'unknown'), false);
+    }
+  } catch (e) {
+    setStatus(status, 'Lỗi: ' + e.message, false);
+  }
+}
+
 // ---------- wire up ----------
 $('login-btn').addEventListener('click', login);
 $('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
@@ -211,6 +233,8 @@ $('save-btn').addEventListener('click', save);
 $('logout-btn').addEventListener('click', logout);
 $('reload-btn').addEventListener('click', openEditor);
 $('preview-btn').addEventListener('click', previewDiscord);
+$('upload-audio-btn').addEventListener('click', () => uploadFile('f-audio-file', 'f-audioUrl', 'upload-audio-status'));
+$('upload-video-btn').addEventListener('click', () => uploadFile('f-video-file', 'f-backgroundVideo', 'upload-video-status'));
 $('add-badge').addEventListener('click', () =>
   $('badges-list').appendChild(listItemRow('', 'assets/icon.gif | Badge Name')));
 $('add-social').addEventListener('click', () =>
