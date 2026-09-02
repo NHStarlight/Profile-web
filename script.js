@@ -19,36 +19,20 @@ function pfWaitConfig() {
   });
 }
 
-function initMedia() {
+function initMedia(pf) {
   const backgroundMusic = document.getElementById('background-music');
-  const backgroundVideo = document.getElementById('background');
-  if (!backgroundVideo) return;
+  if (!backgroundMusic) return;
 
   // Music source comes from the admin config (uploaded file or external URL).
-  if (backgroundMusic) {
-    const musicSrc = window.PF_CONFIG?.audioUrl
-      || window.PF_CONFIG?.musicUrl
-      || window.PF_CONFIG?.defaults?.musicUrl
-      || '';
-    if (musicSrc) {
-      backgroundMusic.src = musicSrc;
-      backgroundMusic.volume = window.PF_CONFIG?.defaults?.volume ?? 0.3;
-      backgroundMusic.loop = true;
-    }
-  }
-
-  // No video configured → animated gradient instead of black void.
-  const bgSrc = window.PF_CONFIG?.backgroundVideo
-    || window.PF_CONFIG?.defaults?.backgroundVideo
+  const musicSrc = pf?.audioUrl
+    || pf?.musicUrl
+    || pf?.defaults?.musicUrl
     || '';
-  if (!bgSrc) {
-    showBackgroundFallback();
-    return;
+  if (musicSrc) {
+    backgroundMusic.src = musicSrc;
+    backgroundMusic.volume = pf?.defaults?.volume ?? 0.3;
+    backgroundMusic.loop = true;
   }
-  backgroundVideo.muted = true;
-  backgroundVideo.onerror = () => showBackgroundFallback();
-  backgroundVideo.src = bgSrc;
-  backgroundVideo.play().catch(() => showBackgroundFallback());
 }
 
 function showBackgroundFallback() {
@@ -183,6 +167,9 @@ renderBadges(CFG.badges || []);
       })
       .catch(() => {});
   }
+
+  // Media: background music from config (admin URL or uploaded /api/media/...).
+  initMedia(CFG);
 
   // Single background from config (uploaded/URL — set via /admin).
   const video = CFG.backgroundVideo
