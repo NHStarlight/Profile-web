@@ -93,6 +93,7 @@ function fillForm(c) {
   $('f-discordUserId').value = c.discordUserId || '';
   $('f-discordSync').checked = !!c.discordSync;
   $('f-lanyard').checked = !!c.lanyard;
+  $('f-decorationScale').value = c.decorationScale ?? 1.2;
   $('f-backgroundVideo').value = c.backgroundVideo || '';
   $('f-audioUrl').value = c.audioUrl || '';
   renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'assets/icon.gif | Badge Name');
@@ -131,6 +132,7 @@ async function save() {
     merged.discordUserId = $('f-discordUserId').value.trim();
     merged.discordSync = $('f-discordSync').checked;
     merged.lanyard = $('f-lanyard').checked;
+    merged.decorationScale = parseFloat($('f-decorationScale').value) || 1.2;
     merged.backgroundVideo = $('f-backgroundVideo').value.trim();
     merged.audioUrl = $('f-audioUrl').value.trim();
     merged.badges = collectList('badges-list').map(parsePipe);

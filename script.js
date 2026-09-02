@@ -164,6 +164,10 @@ renderBadges(CFG.badges || []);
             avatarWrap.appendChild(deco);
           }
           deco.src = p.decorationUrl;
+          // Admin-adjustable size (default 1.2 = 120% of the avatar).
+          const scale = parseFloat(CFG.decorationScale) || 1.2;
+          deco.style.width = (scale * 100) + '%';
+          deco.style.height = (scale * 100) + '%';
         }
         if (Array.isArray(p.badges) && p.badges.length) {
           const manual = CFG.badges || [];

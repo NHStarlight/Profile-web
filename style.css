@@ -88,7 +88,7 @@ body {
 .profile-decoration {
   position: absolute;
   top: 50%; left: 50%;
-  width: 136%; height: 136%;
+  width: 120%; height: 120%;   /* scale override từ admin: CFG.decorationScale */
   transform: translate(-50%, -50%);
   object-fit: contain;
   pointer-events: none;
