@@ -3,7 +3,7 @@ const { saveMedia } = require('../_lib/db');
 
 // Accepts JSON { name, mime, dataBase64 } and stores the bytes in Postgres.
 // Returns { ok, url: "/api/media/<id>" } ready to paste into the config.
-const MAX_BYTES = 4 * 1024 * 1024; // 4MB — Vercel Hobby body limit is ~4.5MB
+const MAX_BYTES = 5 * 1024 * 1024; // 5MB (lưu ý: Vercel Hobby có thể chặn body ~4.5MB — file >4.5MB hãy dùng catbox)
 const ALLOWED_PREFIXES = ['audio/', 'image/', 'video/'];
 
 module.exports = async (req, res) => {

@@ -64,7 +64,7 @@ function listItemRow(value, placeholder, withUpload) {
     fileInput.onchange = async () => {
       const file = fileInput.files?.[0];
       if (!file) return;
-      if (file.size > 4 * 1024 * 1024) { alert('File > 4MB — hãy up lên catbox.moe rồi dán link.'); return; }
+      if (file.size > 5 * 1024 * 1024) { alert('File > 5MB — hãy up lên catbox.moe rồi dán link.'); return; }
       btn.textContent = '…';
       try {
         const buf = await file.arrayBuffer();
@@ -113,10 +113,75 @@ function parsePipe(value) {
   return { image: value.slice(0, idx).trim(), label: value.slice(idx + 1).trim() };
 }
 
-function parseSocial(value) {
-  const idx = value.indexOf('|');
-  if (idx === -1) return { image: '', label: 'link', url: value.trim() };
-  return { image: value.slice(0, idx).trim(), label: 'link', url: value.slice(idx + 1).trim() };
+// ---------- social editor: tách riêng Icon (upload/link) + Link ----------
+function socialItemRow(image, url) {
+  const div = document.createElement('div');
+  div.className = 'list-item';
+  const iconInput = document.createElement('input');
+  iconInput.type = 'text';
+  iconInput.value = image || '';
+  iconInput.placeholder = 'Icon (bấm ⬆ hoặc link ảnh)';
+  const linkInput = document.createElement('input');
+  linkInput.type = 'text';
+  linkInput.value = url || '';
+  linkInput.placeholder = 'Link social (vd: discord.gg/abc)';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+  const btn = document.createElement('button');
+  btn.textContent = '⬆';
+  btn.className = 'secondary';
+  btn.title = 'Chọn icon từ máy';
+  btn.onclick = () => fileInput.click();
+  fileInput.onchange = async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('File > 5MB — hãy up lên catbox.moe rồi dán link.'); return; }
+    btn.textContent = '…';
+    try {
+      const buf = await file.arrayBuffer();
+      let bin = '';
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      const r = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file.name, mime: file.type || 'image/*', dataBase64: btoa(bin) }),
+      });
+      const j = await r.json();
+      if (j.ok) iconInput.value = j.url;
+      else alert('Upload lỗi: ' + (j.error || 'unknown'));
+    } catch (e) {
+      alert('Upload lỗi: ' + e.message);
+    }
+    btn.textContent = '⬆';
+  };
+  const del = document.createElement('button');
+  del.textContent = '✕';
+  del.className = 'danger';
+  del.onclick = () => div.remove();
+  div.append(iconInput, linkInput, fileInput, btn, del);
+  return div;
+}
+
+function renderSocials(containerId, items) {
+  const box = $(containerId);
+  box.innerHTML = '';
+  (items || []).forEach((s) => box.appendChild(socialItemRow(s.image || '', s.url || '')));
+}
+
+function collectSocials(containerId) {
+  return Array.from($(containerId).querySelectorAll('.list-item'))
+    .map((row) => {
+      const ts = row.querySelectorAll('input[type="text"]');
+      return {
+        image: (ts[0]?.value || '').trim(),
+        label: 'link',
+        url: (ts[1]?.value || '').trim(),
+      };
+    })
+    .filter((s) => s.image || s.url);
 }
 
 // ---------- load / save ----------
@@ -133,8 +198,8 @@ function fillForm(c) {
   $('f-decorationScale').value = c.decorationScale ?? 1.2;
   $('f-backgroundVideo').value = c.backgroundVideo || '';
   $('f-audioUrl').value = c.audioUrl || '';
-  renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'URL ảnh (vd: /api/media/…) | Badge Name', true);
-  renderList('socials-list', (c.socials || []).map((s) => `${s.image} | ${s.url}`), 'URL icon | https://…', true);
+  renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'Ảnh badge (bấm ⬆ hoặc link) | Tên badge', true);
+  renderSocials('socials-list', c.socials || []);
   $('f-json').value = JSON.stringify(c, null, 2);
 }
 
@@ -173,7 +238,7 @@ async function save() {
     merged.backgroundVideo = $('f-backgroundVideo').value.trim();
     merged.audioUrl = $('f-audioUrl').value.trim();
     merged.badges = collectList('badges-list').map(parsePipe);
-    merged.socials = collectList('socials-list').map(parseSocial);
+    merged.socials = collectSocials('socials-list');
     delete merged._source;
 
     const r = await fetch('/api/admin/save', {
@@ -237,8 +302,8 @@ async function uploadFile(fileInputId, urlInputId, statusId) {
     setStatus(status, 'Chưa chọn file.', false);
     return;
   }
-  if (file.size > 4 * 1024 * 1024) {
-    setStatus(status, `File ${(file.size / 1048576).toFixed(1)}MB vượt 4MB — hãy up lên catbox.moe rồi dán link.`, false);
+  if (file.size > 5 * 1024 * 1024) {
+    setStatus(status, `File ${(file.size / 1048576).toFixed(1)}MB vượt 5MB — hãy up lên catbox.moe rồi dán link.`, false);
     return;
   }
   setStatus(status, 'Đang upload…', true);
@@ -276,9 +341,9 @@ $('upload-audio-btn').addEventListener('click', () => uploadFile('f-audio-file',
 $('upload-video-btn').addEventListener('click', () => uploadFile('f-video-file', 'f-backgroundVideo', 'upload-video-status'));
 $('upload-profile-btn').addEventListener('click', () => uploadFile('f-profileImage-file', 'f-profileImage', 'save-status'));
 $('add-badge').addEventListener('click', () =>
-  $('badges-list').appendChild(listItemRow('', 'URL ảnh (vd: /api/media/…) | Badge Name', true)));
+  $('badges-list').appendChild(listItemRow('', 'Ảnh badge (bấm ⬆ hoặc link) | Tên badge', true)));
 $('add-social').addEventListener('click', () =>
-  $('socials-list').appendChild(listItemRow('', 'URL icon | https://…', true)));
+  $('socials-list').appendChild(socialItemRow('', '')));
 
 checkAuth().then((authed) => {
   if (authed) openEditor();
