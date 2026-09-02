@@ -153,7 +153,7 @@ renderBadges(CFG.badges || []);
         if (!p?.available) return;
         if (p.avatarUrl) { armAvatarFallback(profilePicture); profilePicture.src = p.avatarUrl; }
         // Avatar decoration overlays the PFP — injected into .avatar-wrap so the
-        // CSS (overflow visible, centered, 136%) can render it around the border.
+        // CSS (overflow visible, centered, 120% default) can render it around the border.
         if (p.decorationUrl && avatarWrap) {
           let deco = avatarWrap.querySelector('.profile-decoration');
           if (!deco) {

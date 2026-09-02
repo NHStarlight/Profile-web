@@ -70,8 +70,9 @@ body {
 
 /* ---------- Avatar + decoration ----------
    KEY FIX: wrap has NO border-radius clipping (overflow visible) and the
-   decoration img is centered above the avatar at 135% size — exactly how
-   Discord renders avatar decorations around the PFP. */
+   decoration img is centered on the avatar at 120% by default — exactly how
+   Discord renders avatar decorations around the PFP. Size is adjustable
+   from the admin panel (decorationScale, applied inline by script.js). */
 .avatar-wrap {
   position: relative;
   width: 150px; height: 150px;
