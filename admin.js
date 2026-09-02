@@ -8,11 +8,27 @@ function setStatus(el, msg, ok) {
   el.className = 'status ' + (ok ? 'ok' : 'err');
 }
 
+// Read a fetch response as JSON safely. When Vercel rejects an oversized
+// body it returns an HTML "Request Entity Too Large" page (not JSON) — turn
+// that into a readable message instead of "Unexpected token 'R'...".
+async function parseResp(r) {
+  try { return await r.json(); }
+  catch {
+    let text = '';
+    try { text = await r.text(); } catch {}
+    const brief = text.replace(/\s+/g, ' ').slice(0, 120);
+    const hint = (r.status === 413 || /Request Entity Too Large/i.test(text))
+      ? ' — file quá giới hạn Vercel (~4.5MB), hãy up lên catbox.moe rồi dán link.'
+      : '';
+    return { ok: false, error: `Lỗi HTTP ${r.status}${brief ? ' (' + brief + ')' : ''}${hint}` };
+  }
+}
+
 // ---------- auth ----------
 async function checkAuth() {
   try {
     const r = await fetch('/api/admin/login');
-    const j = await r.json();
+    const j = await parseResp(r);
     return !!j.authenticated;
   } catch { return false; }
 }
@@ -25,7 +41,7 @@ async function login() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: $('password').value }),
     });
-    const j = await r.json();
+    const j = await parseResp(r);
     if (j.ok) {
       setStatus(status, 'OK — đang mở editor…', true);
       await openEditor();
@@ -76,7 +92,7 @@ function listItemRow(value, placeholder, withUpload) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: file.name, mime: file.type || 'image/*', dataBase64: btoa(bin) }),
         });
-        const j = await r.json();
+        const j = await parseResp(r);
         if (j.ok) input.value = j.url;
         else alert('Upload lỗi: ' + (j.error || 'unknown'));
       } catch (e) {
@@ -149,7 +165,7 @@ function socialItemRow(image, url) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: file.name, mime: file.type || 'image/*', dataBase64: btoa(bin) }),
       });
-      const j = await r.json();
+      const j = await parseResp(r);
       if (j.ok) iconInput.value = j.url;
       else alert('Upload lỗi: ' + (j.error || 'unknown'));
     } catch (e) {
@@ -206,7 +222,7 @@ function fillForm(c) {
 async function openEditor() {
   const r = await fetch('/api/admin/save');
   if (r.status === 401) return false;
-  const j = await r.json();
+  const j = await parseResp(r);
   CONFIG = j.config;
   fillForm(CONFIG);
   $('login-view').classList.add('hidden');
@@ -246,7 +262,7 @@ async function save() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(merged),
     });
-    const j = await r.json();
+    const j = await parseResp(r);
     if (j.ok) {
       CONFIG = j.config;
       fillForm(CONFIG);
@@ -265,7 +281,7 @@ async function previewDiscord() {
   box.innerHTML = 'Đang tải…';
   try {
     const r = await fetch(`/api/admin/preview?id=${encodeURIComponent(id)}`);
-    const j = await r.json();
+    const j = await parseResp(r);
     const p = j.profile;
     if (!p?.available) {
       box.innerHTML = `❌ Không lấy được dữ liệu (${p?.reason || 'unknown'}).<br>
@@ -318,7 +334,7 @@ async function uploadFile(fileInputId, urlInputId, statusId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: file.name, mime: file.type || 'application/octet-stream', dataBase64 }),
     });
-    const j = await r.json();
+    const j = await parseResp(r);
     if (j.ok) {
       $(urlInputId).value = j.url;
       setStatus(status, `✅ Uploaded → ${j.url} (nhớ bấm Lưu)`, true);
