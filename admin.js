@@ -43,25 +43,62 @@ async function logout() {
 }
 
 // ---------- list editors (badges / socials) ----------
-function listItemRow(value, placeholder) {
+function listItemRow(value, placeholder, withUpload) {
   const div = document.createElement('div');
   div.className = 'list-item';
   const input = document.createElement('input');
   input.type = 'text';
   input.value = value || '';
   input.placeholder = placeholder;
-  const btn = document.createElement('button');
-  btn.textContent = '✕';
-  btn.className = 'danger';
-  btn.onclick = () => div.remove();
-  div.append(input, btn);
+  div.appendChild(input);
+  if (withUpload) {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    const btn = document.createElement('button');
+    btn.textContent = '⬆';
+    btn.className = 'secondary';
+    btn.title = 'Chọn file từ máy';
+    btn.onclick = () => fileInput.click();
+    fileInput.onchange = async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) { alert('File > 4MB — hãy up lên catbox.moe rồi dán link.'); return; }
+      btn.textContent = '…';
+      try {
+        const buf = await file.arrayBuffer();
+        let bin = '';
+        const bytes = new Uint8Array(buf);
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        const r = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: file.name, mime: file.type || 'image/*', dataBase64: btoa(bin) }),
+        });
+        const j = await r.json();
+        if (j.ok) input.value = j.url;
+        else alert('Upload lỗi: ' + (j.error || 'unknown'));
+      } catch (e) {
+        alert('Upload lỗi: ' + e.message);
+      }
+      btn.textContent = '⬆';
+    };
+    div.appendChild(fileInput);
+    div.appendChild(btn);
+  }
+  const del = document.createElement('button');
+  del.textContent = '✕';
+  del.className = 'danger';
+  del.onclick = () => div.remove();
+  div.appendChild(del);
   return div;
 }
 
-function renderList(containerId, items, placeholder) {
+function renderList(containerId, items, placeholder, withUpload) {
   const box = $(containerId);
   box.innerHTML = '';
-  (items || []).forEach((v) => box.appendChild(listItemRow(v, placeholder)));
+  (items || []).forEach((v) => box.appendChild(listItemRow(v, placeholder, withUpload)));
 }
 
 function collectList(containerId) {
@@ -96,8 +133,8 @@ function fillForm(c) {
   $('f-decorationScale').value = c.decorationScale ?? 1.2;
   $('f-backgroundVideo').value = c.backgroundVideo || '';
   $('f-audioUrl').value = c.audioUrl || '';
-  renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'assets/icon.gif | Badge Name');
-  renderList('socials-list', (c.socials || []).map((s) => `${s.image} | ${s.url}`), 'assets/icon.png | https://…');
+  renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'URL ảnh (vd: /api/media/…) | Badge Name', true);
+  renderList('socials-list', (c.socials || []).map((s) => `${s.image} | ${s.url}`), 'URL icon | https://…', true);
   $('f-json').value = JSON.stringify(c, null, 2);
 }
 
@@ -237,10 +274,11 @@ $('reload-btn').addEventListener('click', openEditor);
 $('preview-btn').addEventListener('click', previewDiscord);
 $('upload-audio-btn').addEventListener('click', () => uploadFile('f-audio-file', 'f-audioUrl', 'upload-audio-status'));
 $('upload-video-btn').addEventListener('click', () => uploadFile('f-video-file', 'f-backgroundVideo', 'upload-video-status'));
+$('upload-profile-btn').addEventListener('click', () => uploadFile('f-profileImage-file', 'f-profileImage', 'save-status'));
 $('add-badge').addEventListener('click', () =>
-  $('badges-list').appendChild(listItemRow('', 'assets/icon.gif | Badge Name')));
+  $('badges-list').appendChild(listItemRow('', 'URL ảnh (vd: /api/media/…) | Badge Name')));
 $('add-social').addEventListener('click', () =>
-  $('socials-list').appendChild(listItemRow('', 'assets/icon.png | https://…')));
+  $('socials-list').appendChild(listItemRow('', 'URL icon | https://…')));
 
 checkAuth().then((authed) => {
   if (authed) openEditor();

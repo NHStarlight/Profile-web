@@ -76,8 +76,12 @@
       <input type="text" id="f-startMessage">
       <label>Bio (mỗi dòng một câu, sẽ luân phiên hiện)</label>
       <textarea id="f-bioLines"></textarea>
-      <label>Ảnh profile (URL hoặc assets/...)</label>
-      <input type="text" id="f-profileImage">
+      <label>Ảnh profile (URL hoặc bấm ⬆ chọn file từ máy)</label>
+      <div class="upload-row">
+        <input type="text" id="f-profileImage">
+        <input type="file" id="f-profileImage-file" accept="image/*" style="display:none;">
+        <button class="secondary" id="upload-profile-btn">⬆</button>
+      </div>
       <label>Số view ban đầu</label>
       <input type="number" id="f-visitorBase">
     </div>
@@ -100,14 +104,14 @@
       <h2>Badges thủ công (hiện sau badges Discord)</h2>
       <div id="badges-list"></div>
       <button class="secondary" id="add-badge">+ Thêm badge</button>
-      <p class="sub" style="margin-top:8px;">Định dạng: đường dẫn ảnh | chữ tooltip — vd: assets/verified.gif | Verified</p>
+      <p class="sub" style="margin-top:8px;">Dán URL hoặc bấm ⬆ chọn file từ máy — vd: /api/media/… | Verified</p>
     </div>
 
     <div class="card">
       <h2>Social links</h2>
       <div id="socials-list"></div>
       <button class="secondary" id="add-social">+ Thêm social</button>
-      <p class="sub" style="margin-top:8px;">Định dạng: icon | URL — vd: assets/discord.png | https://discord.gg/xxx</p>
+      <p class="sub" style="margin-top:8px;">Dán URL hoặc bấm ⬆ chọn icon từ máy — vd: /api/media/… | https://discord.gg/xxx</p>
     </div>
 
     <div class="card">
