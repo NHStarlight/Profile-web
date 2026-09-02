@@ -151,7 +151,7 @@ renderBadges(CFG.badges || []);
       .then((j) => {
         const p = j?.ok ? j.profile : null;
         if (!p?.available) return;
-        if (p.avatarUrl) { armAvatarFallback(profilePicture); profilePicture.src = p.avatarUrl; }
+        if (p.avatarUrl && !CFG.profileImage) { armAvatarFallback(profilePicture); profilePicture.src = p.avatarUrl; }
         // Avatar decoration overlays the PFP — injected into .avatar-wrap so the
         // CSS (overflow visible, centered, 120% default) can render it around the border.
         if (p.decorationUrl && avatarWrap) {

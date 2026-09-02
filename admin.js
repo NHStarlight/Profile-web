@@ -102,7 +102,7 @@ function renderList(containerId, items, placeholder, withUpload) {
 }
 
 function collectList(containerId) {
-  return Array.from($(containerId).querySelectorAll('input'))
+  return Array.from($(containerId).querySelectorAll('input[type="text"]'))
     .map((i) => i.value.trim())
     .filter(Boolean);
 }
@@ -276,9 +276,9 @@ $('upload-audio-btn').addEventListener('click', () => uploadFile('f-audio-file',
 $('upload-video-btn').addEventListener('click', () => uploadFile('f-video-file', 'f-backgroundVideo', 'upload-video-status'));
 $('upload-profile-btn').addEventListener('click', () => uploadFile('f-profileImage-file', 'f-profileImage', 'save-status'));
 $('add-badge').addEventListener('click', () =>
-  $('badges-list').appendChild(listItemRow('', 'URL ảnh (vd: /api/media/…) | Badge Name')));
+  $('badges-list').appendChild(listItemRow('', 'URL ảnh (vd: /api/media/…) | Badge Name', true)));
 $('add-social').addEventListener('click', () =>
-  $('socials-list').appendChild(listItemRow('', 'URL icon | https://…')));
+  $('socials-list').appendChild(listItemRow('', 'URL icon | https://…', true)));
 
 checkAuth().then((authed) => {
   if (authed) openEditor();
