@@ -30,7 +30,7 @@ const DEFAULT_CONFIG = {
   // video/music: URL trực tiếp (.mp4/.webm/.mp3 — ví dụ catbox.moe, không phải
   // link trang YouTube). Để trống → nền gradient động, không nhạc.
   defaults: { theme: 'home', volume: 0.3, transparency: 0.7 },
-  visitorBase: 921234, // starting value for the localStorage view counter
+  visitorBase: 0, // legacy — real view counter is server-side via /api/visit
 };
 
 module.exports = { DEFAULT_CONFIG };

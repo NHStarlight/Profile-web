@@ -207,7 +207,6 @@ function fillForm(c) {
   $('f-startMessage').value = c.startMessage || '';
   $('f-bioLines').value = (c.bioLines || []).join('\n');
   $('f-profileImage').value = c.profileImage || '';
-  $('f-visitorBase').value = c.visitorBase ?? 0;
   $('f-discordUserId').value = c.discordUserId || '';
   $('f-discordSync').checked = !!c.discordSync;
   $('f-lanyard').checked = !!c.lanyard;
@@ -246,7 +245,6 @@ async function save() {
     merged.startMessage = $('f-startMessage').value;
     merged.bioLines = $('f-bioLines').value.split('\n').map((s) => s.trim()).filter(Boolean);
     merged.profileImage = $('f-profileImage').value;
-    merged.visitorBase = parseInt($('f-visitorBase').value, 10) || 0;
     merged.discordUserId = $('f-discordUserId').value.trim();
     merged.discordSync = $('f-discordSync').checked;
     merged.lanyard = $('f-lanyard').checked;

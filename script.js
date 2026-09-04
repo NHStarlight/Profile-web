@@ -197,22 +197,30 @@ renderBadges(CFG.badges || []);
     startText.textContent = startTextContent + (startCursorVisible ? '|' : ' ');
   }, 500);
   typeWriterStart();
-// ---- Visitor counter ----
-  (function initializeVisitorCounter() {
-    let totalVisitors = localStorage.getItem('totalVisitorCount');
-    if (!totalVisitors) {
-      totalVisitors = CFG.visitorBase ?? 921234;
-      localStorage.setItem('totalVisitorCount', totalVisitors);
-    } else {
-      totalVisitors = parseInt(totalVisitors);
+// ---- Visitor counter: real server-side count (one per browser) ----
+  (function initVisitorCounter() {
+    const el = visitorCount;
+    if (!el) return;
+    // Stable id per browser → opening the profile several times counts once.
+    let vid = localStorage.getItem('pv_vid');
+    if (!vid) {
+      vid = 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem('pv_vid', vid);
     }
-    const hasVisited = localStorage.getItem('hasVisited');
-    if (!hasVisited) {
-      totalVisitors++;
-      localStorage.setItem('totalVisitorCount', totalVisitors);
-      localStorage.setItem('hasVisited', 'true');
-    }
-    visitorCount.textContent = totalVisitors.toLocaleString();
+    fetch('/api/visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vid }),
+    })
+      .then((r) => r.json())
+      .then((j) => { if (j && typeof j.count === 'number') el.textContent = j.count.toLocaleString(); })
+      .catch(() => {
+        // Read-only fallback if the POST fails (still show the real number).
+        fetch('/api/visit')
+          .then((r) => r.json())
+          .then((j) => { if (j && typeof j.count === 'number') el.textContent = j.count.toLocaleString(); })
+          .catch(() => {});
+      });
   })();
 
   // ---- Reveal profile on start-click ----

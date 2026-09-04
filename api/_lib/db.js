@@ -101,4 +101,63 @@ async function getMedia(id) {
   }
 }
 
-module.exports = { getConfig, saveConfig, saveMedia, getMedia };
+// ---------- Real visitor counter (server-side) ----------
+// Counts unique browsers (deduped by a client-generated visitor id) so the
+// number reflects real people who opened the profile, not a hardcoded base.
+async function ensureViewsTables(sql) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS profile_views (
+      id INT PRIMARY KEY,
+      count BIGINT NOT NULL DEFAULT 0
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS profile_visitors (
+      vid TEXT PRIMARY KEY,
+      visited_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+}
+
+async function getViewCount() {
+  const sql = getSql();
+  if (!sql) return null;
+  try {
+    await ensureViewsTables(sql);
+    const rows = await sql`SELECT count FROM profile_views WHERE id = 1 LIMIT 1`;
+    return rows.length ? Number(rows[0].count) : 0;
+  } catch (err) {
+    console.error('[db] getViewCount failed:', err?.message || err);
+    return null;
+  }
+}
+
+async function registerView(vid) {
+  const sql = getSql();
+  if (!sql) return null;
+  try {
+    await ensureViewsTables(sql);
+    // Only the FIRST time this visitor id appears does the counter go up —
+    // reloads from the same browser are ignored.
+    const ins = await sql`
+      INSERT INTO profile_visitors (vid) VALUES (${vid})
+      ON CONFLICT (vid) DO NOTHING
+      RETURNING vid
+    `;
+    if (ins.length === 0) {
+      const rows = await sql`SELECT count FROM profile_views WHERE id = 1 LIMIT 1`;
+      return rows.length ? Number(rows[0].count) : 0;
+    }
+    const rows = await sql`
+      INSERT INTO profile_views (id, count) VALUES (1, 1)
+      ON CONFLICT (id) DO UPDATE SET count = profile_views.count + 1
+      RETURNING count
+    `;
+    return rows.length ? Number(rows[0].count) : 1;
+  } catch (err) {
+    console.error('[db] registerView failed:', err?.message || err);
+    return null;
+  }
+}
+
+module.exports = { getConfig, saveConfig, saveMedia, getMedia, getViewCount, registerView };
