@@ -51,6 +51,20 @@ function initMedia(pf) {
     if (p0 && p0.catch) p0.catch(() => { /* blocked — gesture will retry */ });
   } catch { /* noop */ }
 
+  // Returning visitor: Chrome's Media Engagement Index (MEI) may allow FULL
+  // unmuted autoplay for sites the user frequently hears media on. Try it —
+  // if allowed, music starts with sound with zero taps.
+  let wasUnlockedBefore = false;
+  try { wasUnlockedBefore = localStorage.getItem('pf_audio_unlocked') === '1'; } catch { /* noop */ }
+  if (wasUnlockedBefore) {
+    try {
+      const p1 = a.play();
+      a.muted = false;
+      a.volume = audibleVolume();
+      if (p1 && p1.catch) p1.catch(() => { try { a.muted = true; } catch { /* noop */ } });
+    } catch { /* noop */ }
+  }
+
   // If the visitor already tapped "enter" while the source was missing, start
   // the same playback path as a gesture right away.
   if (audioArmed) playMusicNow();
@@ -77,7 +91,10 @@ function playUnmuted(a) {
     a.muted = false;
     a.volume = audibleVolume();
     const p = a.play();               // unmuted play inside a real gesture works on Chrome/Android
-    if (p && p.catch) p.catch((e) => { console.warn('[audio] unmuted play blocked, falling back:', e); playMutedKick(a); });
+    if (p && p.then) {
+      p.then(() => { try { localStorage.setItem('pf_audio_unlocked', '1'); } catch { /* noop */ } });
+      p.catch((e) => { console.warn('[audio] unmuted play blocked, falling back:', e); playMutedKick(a); });
+    }
   } catch (e) { console.warn('[audio] play error:', e); playMutedKick(a); }
 }
 
@@ -146,7 +163,12 @@ function tryPlayMusic() { playMusicNow(); }
 
 // Very first interaction anywhere unlocks audio — pointerdown fires BEFORE
 // touchstart on Chrome, making it the most reliable activation trigger.
-function globalUnlock() { playMusicNow(); }
+// Also remembered in localStorage so future visits can try full autoplay
+// (Chrome's Media Engagement Index grants sound autoplay to trusted sites).
+function globalUnlock() {
+  try { localStorage.setItem('pf_audio_unlocked', '1'); } catch { /* noop */ }
+  playMusicNow();
+}
 document.addEventListener('pointerdown', globalUnlock, { once: true, passive: true });
 document.addEventListener('touchstart', globalUnlock, { once: true, passive: true });
 document.addEventListener('click', globalUnlock, { once: true, passive: true });
@@ -172,7 +194,10 @@ function toggleMusic() {
   a.muted = false;
   a.volume = audibleVolume();
   const p = a.play();
-  if (p && p.catch) p.catch(() => playMutedKick(a));   // rare fallback
+  if (p && p.then) {
+    p.then(() => { try { localStorage.setItem('pf_audio_unlocked', '1'); } catch { /* noop */ } });
+    p.catch(() => playMutedKick(a));   // rare fallback
+  }
   updateMusicBtn();
 }
 
