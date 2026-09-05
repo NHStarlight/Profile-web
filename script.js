@@ -3,6 +3,9 @@
 // Everything is driven by the admin-panel config (window.PF_CONFIG).
 
 let hasUserInteracted = false;
+// Set when the visitor taps "enter" before the config/src is ready. We then
+// start playback the moment initMedia() has a source (fixes races on mobile).
+let audioArmed = false;
 
 // Wait (max 2s) for /api/profile config loaded by the inline script in
 // index.html. Falls back to {} so the page still works offline/no-API.
@@ -20,25 +23,65 @@ function pfWaitConfig() {
 }
 
 function initMedia(pf) {
-  const backgroundMusic = document.getElementById('background-music');
-  if (!backgroundMusic) return;
+  const a = document.getElementById('background-music');
+  if (!a) return;
 
   // Music source comes from the admin config (uploaded file or external URL).
   const musicSrc = pf?.audioUrl
     || pf?.musicUrl
     || pf?.defaults?.musicUrl
     || '';
-  if (musicSrc) {
-    backgroundMusic.src = musicSrc;
-    backgroundMusic.volume = pf?.defaults?.volume ?? 0.3;
-    backgroundMusic.loop = true;
-    // Start muted: browsers (especially mobile) block unmuted autoplay until a
-    // real user gesture. We unmute + play inside the click handler below.
-    backgroundMusic.muted = true;
-    backgroundMusic.preload = 'auto';
-    backgroundMusic.load();
-  }
+  if (!musicSrc) return;
+
+  a.src = musicSrc;
+  a.volume = pf?.defaults?.volume ?? 0.3;
+  a.loop = true;
+  a.muted = true;   // always start muted until a user gesture unlocks audio
+  a.preload = 'auto';
+  a.load();
+
+  // If the visitor already tapped "enter" while the source was missing, start
+  // the same playback path as a gesture right away.
+  if (audioArmed) playMusicNow();
 }
+
+// iOS/Android-safe playback: play muted inside the user gesture to "unlock"
+// the audio session, then unmute a moment later. Also waits for the source to
+// actually be ready so an early tap doesn't get dropped forever.
+function playMusicNow() {
+  const a = document.getElementById('background-music');
+  if (!a || !a.src) { audioArmed = true; return; }
+
+  const doPlay = () => {
+    try {
+      a.muted = true;
+      const p = a.play();
+      if (p && p.catch) p.catch(() => {});
+      // Unlock combo: after the browser accepts the (muted) play, unmute.
+      setTimeout(() => {
+        try {
+          a.muted = false;
+          a.volume = window.PF_CONFIG?.defaults?.volume ?? 0.3;
+        } catch { /* noop */ }
+      }, 60);
+    } catch { /* still show the profile */ }
+  };
+
+  if (a.readyState > 0) { doPlay(); audioArmed = false; return; }
+  const onData = () => { doPlay(); audioArmed = false; };
+  a.addEventListener('loadeddata', onData, { once: true });
+  // Safety: if the source never becomes ready, drop the pending arm.
+  setTimeout(() => {
+    if (audioArmed) { a.removeEventListener('loadeddata', onData); audioArmed = false; }
+  }, 4000);
+}
+
+function tryPlayMusic() { playMusicNow(); }
+
+// Very first interaction anywhere unlocks audio for iOS Safari too.
+function globalUnlock() { playMusicNow(); }
+document.addEventListener('touchstart', globalUnlock, { once: true, passive: true });
+document.addEventListener('click', globalUnlock, { once: true, passive: true });
 
 function showBackgroundFallback() {
   const fb = document.getElementById('bg-fallback');
@@ -229,16 +272,6 @@ renderBadges(CFG.badges || []);
   })();
 
   // ---- Reveal profile on start-click ----
-  function tryPlayMusic() {
-    if (!backgroundMusic || !backgroundMusic.src) return;
-    try {
-      backgroundMusic.muted = false;
-      backgroundMusic.volume = window.PF_CONFIG?.defaults?.volume ?? 0.3;
-      const p = backgroundMusic.play();
-      if (p && p.catch) p.catch(() => {});
-    } catch { /* ignore — still show the profile */ }
-  }
-
   function showProfile() {
     if (hasUserInteracted) return;
     hasUserInteracted = true;
