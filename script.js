@@ -143,6 +143,41 @@ document.addEventListener('pointerdown', globalUnlock, { once: true, passive: tr
 document.addEventListener('touchstart', globalUnlock, { once: true, passive: true });
 document.addEventListener('click', globalUnlock, { once: true, passive: true });
 
+/* ---------- Floating music toggle (guaranteed playback for visitors) ----------
+   Autoplay policies vary by browser, but a tap on a real button is ALWAYS a
+   valid user gesture — play() from this handler can never be blocked. */
+function updateMusicBtn() {
+  const btn = document.getElementById('music-toggle');
+  const a = document.getElementById('background-music');
+  if (!btn || !a) return;
+  const playing = !!a.src && !a.paused && !a.muted;
+  btn.textContent = playing ? '🔊' : '🔇';
+  btn.classList.toggle('playing', playing);
+}
+
+function toggleMusic() {
+  const a = document.getElementById('background-music');
+  if (!a || !a.src) return;
+  if (!a.paused && !a.muted) { a.pause(); updateMusicBtn(); return; }
+  a.muted = false;
+  a.volume = audibleVolume();
+  const p = a.play();
+  if (p && p.catch) p.catch(() => playMutedKick(a));   // rare fallback
+  updateMusicBtn();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('music-toggle');
+  const a = document.getElementById('background-music');
+  if (!btn || !a) return;
+  btn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
+  btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  a.addEventListener('play', updateMusicBtn);
+  a.addEventListener('pause', updateMusicBtn);
+  a.addEventListener('volumechange', updateMusicBtn);
+  updateMusicBtn();
+});
+
 function showBackgroundFallback() {
   const fb = document.getElementById('bg-fallback');
   const video = document.getElementById('background');
