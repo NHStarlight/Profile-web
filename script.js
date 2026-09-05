@@ -32,6 +32,11 @@ function initMedia(pf) {
     backgroundMusic.src = musicSrc;
     backgroundMusic.volume = pf?.defaults?.volume ?? 0.3;
     backgroundMusic.loop = true;
+    // Start muted: browsers (especially mobile) block unmuted autoplay until a
+    // real user gesture. We unmute + play inside the click handler below.
+    backgroundMusic.muted = true;
+    backgroundMusic.preload = 'auto';
+    backgroundMusic.load();
   }
 }
 
@@ -224,13 +229,25 @@ renderBadges(CFG.badges || []);
   })();
 
   // ---- Reveal profile on start-click ----
+  function tryPlayMusic() {
+    if (!backgroundMusic || !backgroundMusic.src) return;
+    try {
+      backgroundMusic.muted = false;
+      backgroundMusic.volume = window.PF_CONFIG?.defaults?.volume ?? 0.3;
+      const p = backgroundMusic.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch { /* ignore — still show the profile */ }
+  }
+
   function showProfile() {
     if (hasUserInteracted) return;
     hasUserInteracted = true;
     startScreen.classList.add('hidden');
     profileBlock.classList.remove('hidden');
-    backgroundMusic.muted = false;
-    backgroundMusic.play().catch(() => {});
+    // Play music inside the real user gesture (click). On mobile this must be
+    // a direct call — doing it after an awaiting /api/discord chain gets the
+    // autoplay blocked, which is why music worked on desktop but not mobile.
+    tryPlayMusic();
     if (window.gsap) {
       gsap.fromTo(profileBlock,
         { opacity: 0, y: -50 },
@@ -244,8 +261,9 @@ renderBadges(CFG.badges || []);
     typeWriterName();
     typeWriterBio();
   }
-  startScreen.addEventListener('click', showProfile);
-  startScreen.addEventListener('touchstart', (e) => { e.preventDefault(); showProfile(); });
+  // Bind BOTH gestures (click can fire after touchstart on some devices).
+  startScreen.addEventListener('click', () => { tryPlayMusic(); showProfile(); });
+  startScreen.addEventListener('touchstart', (e) => { e.preventDefault(); tryPlayMusic(); showProfile(); });
 
   // ---- Typewriter: name ----
   const name = CFG.displayName || 'JAQLIV';
