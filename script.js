@@ -22,6 +22,9 @@ function pfWaitConfig() {
   });
 }
 
+let _audioRetryTimer = null;
+let _audioRetryCount = 0;
+
 function initMedia(pf) {
   const a = document.getElementById('background-music');
   if (!a) return;
@@ -45,41 +48,98 @@ function initMedia(pf) {
   if (audioArmed) playMusicNow();
 }
 
-// iOS/Android-safe playback: play muted inside the user gesture to "unlock"
-// the audio session, then unmute a moment later. Also waits for the source to
-// actually be ready so an early tap doesn't get dropped forever.
+function clearAudioRetry() {
+  if (_audioRetryTimer) {
+    clearInterval(_audioRetryTimer);
+    _audioRetryTimer = null;
+    _audioRetryCount = 0;
+  }
+}
+
+// Phone speakers are tiny — 30% (config default) can sound like silence.
+// Always play at least at a clearly-audible level, honoring a louder config.
+function audibleVolume() {
+  const cfg = (typeof window !== 'undefined' && window.PF_CONFIG) || {};
+  const v = Number(cfg?.defaults?.volume) || 0.3;
+  return Math.max(v, 0.6);
+}
+
+function playUnmuted(a) {
+  try {
+    a.muted = false;
+    a.volume = audibleVolume();
+    const p = a.play();               // unmuted play inside a real gesture works on Chrome/Android
+    if (p && p.catch) p.catch((e) => { console.warn('[audio] unmuted play blocked, falling back:', e); playMutedKick(a); });
+  } catch (e) { console.warn('[audio] play error:', e); playMutedKick(a); }
+}
+
+function playMutedKick(a) {
+  // Muted autoplay is ALWAYS allowed; once playing, flipping muted is legal,
+  // which is the iOS/Android-proof "unlock" pattern.
+  try {
+    a.muted = true;
+    const p = a.play();
+    if (p && p.catch) p.catch(() => {});
+    setTimeout(() => {
+      try {
+        a.muted = false;
+        a.volume = audibleVolume();
+      } catch { /* noop */ }
+    }, 120);
+  } catch { /* noop */ }
+}
+
+// Chrome Android / iOS: the only reliable way is a play() call inside a real
+// user gesture (pointerdown/touchstart/click). This function tries the sound
+// play first, falls back to muted-kick, and keeps retrying until the source
+// actually becomes ready — a slow mobile network can't dead-end it.
 function playMusicNow() {
   const a = document.getElementById('background-music');
   if (!a || !a.src) { audioArmed = true; return; }
 
-  const doPlay = () => {
-    try {
-      a.muted = true;
-      const p = a.play();
-      if (p && p.catch) p.catch(() => {});
-      // Unlock combo: after the browser accepts the (muted) play, unmute.
-      setTimeout(() => {
-        try {
-          a.muted = false;
-          a.volume = window.PF_CONFIG?.defaults?.volume ?? 0.3;
-        } catch { /* noop */ }
-      }, 60);
-    } catch { /* still show the profile */ }
-  };
+  if (a.readyState >= 3) {  // HAVE_FUTURE_DATA — enough to actually play
+    clearAudioRetry();
+    audioArmed = false;
+    playUnmuted(a);
+    return;
+  }
 
-  if (a.readyState > 0) { doPlay(); audioArmed = false; return; }
-  const onData = () => { doPlay(); audioArmed = false; };
-  a.addEventListener('loadeddata', onData, { once: true });
-  // Safety: if the source never becomes ready, drop the pending arm.
-  setTimeout(() => {
-    if (audioArmed) { a.removeEventListener('loadeddata', onData); audioArmed = false; }
-  }, 4000);
+  // Source not ready yet: arm it and warm the media pipeline with a muted kick.
+  audioArmed = true;
+
+  const onReady = () => {
+    clearAudioRetry();
+    audioArmed = false;
+    playUnmuted(a);
+  };
+  a.addEventListener('canplay', onReady, { once: true });
+  a.addEventListener('loadeddata', onReady, { once: true });
+
+  playMutedKick(a);
+
+  if (!_audioRetryTimer) {
+    _audioRetryTimer = setInterval(() => {
+      const el = document.getElementById('background-music');
+      _audioRetryCount++;
+      if (!audioArmed || _audioRetryCount > 60) { clearAudioRetry(); return; }
+      if (!el || !el.src) return;
+      if (el.readyState >= 3) {
+        clearAudioRetry();
+        audioArmed = false;
+        playUnmuted(el);
+        return;
+      }
+      playMutedKick(el);   // keep the pipeline active on slow networks
+    }, 700);
+  }
 }
 
 function tryPlayMusic() { playMusicNow(); }
 
-// Very first interaction anywhere unlocks audio for iOS Safari too.
+// Very first interaction anywhere unlocks audio — pointerdown fires BEFORE
+// touchstart on Chrome, making it the most reliable activation trigger.
 function globalUnlock() { playMusicNow(); }
+document.addEventListener('pointerdown', globalUnlock, { once: true, passive: true });
 document.addEventListener('touchstart', globalUnlock, { once: true, passive: true });
 document.addEventListener('click', globalUnlock, { once: true, passive: true });
 
