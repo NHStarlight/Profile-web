@@ -43,6 +43,14 @@ function initMedia(pf) {
   a.preload = 'auto';
   a.load();
 
+  // MAX AUTO-ON: muted autoplay is allowed by every browser. Start the music
+  // muted immediately so it is already "running" — the first touch anywhere
+  // (globalUnlock below) just flips unmute and sound comes out instantly.
+  try {
+    const p0 = a.play();
+    if (p0 && p0.catch) p0.catch(() => { /* blocked — gesture will retry */ });
+  } catch { /* noop */ }
+
   // If the visitor already tapped "enter" while the source was missing, start
   // the same playback path as a gesture right away.
   if (audioArmed) playMusicNow();
@@ -151,8 +159,10 @@ function updateMusicBtn() {
   const a = document.getElementById('background-music');
   if (!btn || !a) return;
   const playing = !!a.src && !a.paused && !a.muted;
-  btn.textContent = playing ? '🔊' : '🔇';
   btn.classList.toggle('playing', playing);
+  // pill hint "Bật nhạc" — visible until music is actually audible
+  const hint = document.getElementById('music-hint');
+  if (hint) hint.classList.toggle('hidden', playing);
 }
 
 function toggleMusic() {
