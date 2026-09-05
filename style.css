@@ -51,7 +51,7 @@ body {
 
 /* ---------- Floating music toggle ---------- */
 #music-toggle {
-  position: fixed; top: 18px; right: 18px; z-index: 20;
+  position: fixed; top: 18px; right: 18px; z-index: 60;
   width: 48px; height: 48px; border-radius: 50%;
   border: 1px solid rgba(0, 206, 209, 0.5);
   background:
@@ -94,7 +94,7 @@ body {
 
 /* ---------- "Bật nhạc" pill hint next to the toggle ---------- */
 #music-hint {
-  position: fixed; top: 29px; right: 76px; z-index: 20;
+  position: fixed; top: 29px; right: 76px; z-index: 60;
   padding: 6px 12px;
   font-size: 12px; letter-spacing: 1px;
   color: var(--accent);
