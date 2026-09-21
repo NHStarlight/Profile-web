@@ -414,6 +414,48 @@ setInterval(() => {
   } catch { el.textContent = el.dataset.loc; }
 }, 1000);
 
+// Built-in logo map — skills get real logos automatically by name,
+// no admin config needed. Sources: devicon CDN (jsDelivr).
+const SKILL_LOGOS = {
+  'javascript': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
+  'js': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
+  'typescript': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
+  'ts': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
+  'python': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
+  'html': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg',
+  'html5': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg',
+  'css': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg',
+  'css3': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg',
+  'c++': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg',
+  'cpp': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg',
+  'c#': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/csharp/csharp-original.svg',
+  'csharp': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/csharp/csharp-original.svg',
+  'java': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg',
+  'php': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg',
+  'go': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original-wordmark.svg',
+  'rust': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-original.svg',
+  'ruby': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ruby/ruby-original.svg',
+  'swift': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swift/swift-original.svg',
+  'kotlin': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg',
+  'node': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+  'nodejs': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+  'react': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
+  'vue': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg',
+  'discord': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/discordjs/discordjs-original.svg',
+  'docker': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg',
+  'git': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg',
+  'mysql': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg',
+  'mongodb': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg',
+  'postgres': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg',
+  'postgresql': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg',
+  'linux': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg',
+};
+function skillLogo(sk) {
+  if (sk.icon) return sk.icon;
+  const key = String(sk.name || '').toLowerCase().trim();
+  return SKILL_LOGOS[key] || '';
+}
+
 // Rotating logo orbit (afkar-style): real language logos revolve around the
 // center. Each logo has an animated comet-trail that stretches out, then
 // shrinks thinner and fades away. Logos stay upright; text fallback if the
@@ -429,9 +471,10 @@ function renderOrbit(list) {
   const nodes = items.map((sk) => {
     const el = document.createElement('div');
     el.className = 'orbit-item';
-    if (sk.icon) {
+    const logo = skillLogo(sk);
+    if (logo) {
       const img = document.createElement('img');
-      img.src = sk.icon;
+      img.src = logo;
       img.alt = sk.name || '';
       img.draggable = false;
       img.onerror = () => {
@@ -487,9 +530,10 @@ function renderSkills(list) {
     top.className = 'skill-top';
     const left = document.createElement('span');
     left.className = 'skill-left';
-    if (sk.icon) {
+    const rowLogo = skillLogo(sk);
+    if (rowLogo) {
       const ic = document.createElement('img');
-      ic.src = sk.icon; ic.alt = sk.name || ''; ic.className = 'skill-icon';
+      ic.src = rowLogo; ic.alt = sk.name || ''; ic.className = 'skill-icon';
       ic.onerror = () => ic.remove();
       left.appendChild(ic);
     }
