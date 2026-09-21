@@ -93,8 +93,13 @@ async function getMedia(id) {
   // Validate UUID shape — an invalid cast throws in postgres.
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
   try {
-    const rows = await sql`SELECT mime, data FROM media_assets WHERE id = ${id} LIMIT 1`;
-    return rows[0] || null;
+    const rows = await sql`SELECT mime, size, data FROM media_assets WHERE id = ${id} LIMIT 1`;
+    if (!rows[0]) return null;
+    const raw = rows[0].data;
+    // neon may return bytea as Buffer or Uint8Array — normalize to Buffer so
+    // the media handler can slice Range requests reliably.
+    const data = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
+    return { mime: rows[0].mime, size: rows[0].size || data.length, data };
   } catch (err) {
     console.error('[db] getMedia failed:', err?.message || err);
     return null;

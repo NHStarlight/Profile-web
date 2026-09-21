@@ -13,14 +13,17 @@ const PORT = process.env.TEST_PORT || 8787;
 const routes = {
   '/api/profile': require('./api/profile.js'),
   '/api/discord': require('./api/discord.js'),
+  '/api/visit': require('./api/visit.js'),
   '/api/admin/login': require('./api/admin/login.js'),
   '/api/admin/save': require('./api/admin/save.js'),
   '/api/admin/preview': require('./api/admin/preview.js'),
+  '/api/admin/upload': require('./api/admin/upload.js'),
+  '/api/media': require('./api/media/[id].js'),
 };
 
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
-  '.png': 'image/png', '.gif': 'image/gif', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4',
+  '.png': 'image/png', '.gif': 'image/gif', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.webm': 'video/webm',
 };
 
 function readBody(req) {
@@ -33,10 +36,14 @@ function readBody(req) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
-  const handler = routes[url.pathname];
+  let handler = routes[url.pathname];
+  if (!handler && url.pathname.startsWith('/api/media/')) {
+    handler = routes['/api/media'];
+    req.query = { id: url.pathname.split('/api/media/')[1] };
+  }
   if (handler) {
-    // Vercel augments req/res; mirror that here.
-    req.query = Object.fromEntries(url.searchParams);
+    if (!req.query) req.query = Object.fromEntries(url.searchParams);
+    if (!res.send) res.send = (b) => { res.end(b); return res; };
     res.status = (code) => { res.statusCode = code; return res; };
     res.json = (obj) => {
       res.setHeader('Content-Type', 'application/json');

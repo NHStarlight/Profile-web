@@ -25,16 +25,70 @@ function pfWaitConfig() {
 let _audioRetryTimer = null;
 let _audioRetryCount = 0;
 
+// Normalize a user-entered URL: trim, keep valid https:// or /api/media/...,
+// auto-prepend https:// when the scheme is missing (e.g. discord.gg/abc).
+// Existing correct URLs pass through untouched.
+function normalizeUrl(u) {
+  let s = String(u || '').trim();
+  if (!s) return '';
+  if (s.startsWith('/') || s.startsWith('data:') || s.startsWith('blob:')) return s;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) return s; // already has scheme
+  return 'https://' + s;
+}
+
+// Page links (watch pages, Spotify/ SoundCloud pages) are NOT direct audio
+// files — <audio> can never play them. Detect and explain instead of silence.
+function isNonDirectAudioLink(s) {
+  return /(youtube\.com\/watch|youtu\.be\/|spotify\.com|soundcloud\.com(?!\/.*stream)|music\.apple\.com)/i.test(s || '');
+}
+
+function resolveAudioSrc(pf) {
+  const raw = String(pf?.audioUrl || pf?.musicUrl || pf?.defaults?.musicUrl || '').trim();
+  if (!raw) return { src: '', error: '' };
+  const src = normalizeUrl(raw);
+  if (isNonDirectAudioLink(src)) {
+    return { src: '', error: 'Link này là trang nghe nhạc (YouTube/Spotify), không phải file MP3 trực tiếp — hãy dùng link .mp3 (VD: catbox.moe) hoặc Upload file.' };
+  }
+  return { src, error: '' };
+}
+
+function showAudioError(msg) {
+  const el = document.getElementById('audio-error');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  const p = document.getElementById('player');
+  if (p) p.classList.remove('hidden');
+}
+function clearAudioError() {
+  const el = document.getElementById('audio-error');
+  if (el) { el.textContent = ''; el.classList.add('hidden'); }
+}
+function formatTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return m + ':' + String(s).padStart(2, '0');
+}
+function trackDisplayName(pf, fallbackFile) {
+  if (pf?.playerTitle) return pf.playerTitle;
+  if (fallbackFile) return fallbackFile;
+  try {
+    const u = new URL(pf?.audioUrl || '', location.href);
+    const base = u.pathname.split('/').pop();
+    if (base && /\.(mp3|ogg|wav|m4a|webm)$/i.test(base)) return decodeURIComponent(base);
+  } catch { /* noop */ }
+  return 'Background music';
+}
+
 function initMedia(pf) {
   const a = document.getElementById('background-music');
   if (!a) return;
 
   // Music source comes from the admin config (uploaded file or external URL).
-  const musicSrc = pf?.audioUrl
-    || pf?.musicUrl
-    || pf?.defaults?.musicUrl
-    || '';
+  const { src: musicSrc, error } = resolveAudioSrc(pf);
+  if (error) { showAudioError(error); return; }
   if (!musicSrc) return;
+  clearAudioError();
 
   a.src = musicSrc;
   a.volume = pf?.defaults?.volume ?? 0.3;
@@ -210,8 +264,186 @@ document.addEventListener('DOMContentLoaded', () => {
   a.addEventListener('play', updateMusicBtn);
   a.addEventListener('pause', updateMusicBtn);
   a.addEventListener('volumechange', updateMusicBtn);
+  // Surface load failures instead of silent no-music (user-reported bug).
+  a.addEventListener('error', () => {
+    const src = a.getAttribute('src') || a.src || '';
+    if (!src) return;
+    showAudioError('Không tải được file nhạc — link có thể sai, hết hạn, hoặc server chặn (CORS). Thử link .mp3 khác hoặc Upload file.');
+  });
+  // Keep the Spotify-style player in sync with the real <audio>.
+  const pt = document.getElementById('player-toggle');
+  const seek = document.getElementById('player-seek');
+  const cur = document.getElementById('player-cur');
+  const dur = document.getElementById('player-dur');
+  if (pt) pt.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
+  if (seek) {
+    seek.addEventListener('input', () => {
+      if (!a.duration || !isFinite(a.duration)) return;
+      try { a.currentTime = (Number(seek.value) / 1000) * a.duration; } catch { /* noop */ }
+    });
+  }
+  a.addEventListener('timeupdate', () => {
+    if (seek && a.duration && isFinite(a.duration) && document.activeElement !== seek) {
+      seek.value = String(Math.round((a.currentTime / a.duration) * 1000));
+    }
+    if (cur) cur.textContent = formatTime(a.currentTime);
+    if (dur) dur.textContent = formatTime(a.duration);
+  });
+  a.addEventListener('loadedmetadata', () => {
+    if (dur) dur.textContent = formatTime(a.duration);
+    if (cur) cur.textContent = formatTime(a.currentTime || 0);
+  });
+  a.addEventListener('play', () => { if (pt) pt.textContent = '⏸'; });
+  a.addEventListener('pause', () => { if (pt) pt.textContent = '▶'; });
   updateMusicBtn();
+
+  // Hamburger menu → tabs
+  const menuBtn = document.getElementById('menu-btn');
+  const menuNav = document.getElementById('menu-nav');
+  if (menuBtn && menuNav) {
+    menuBtn.addEventListener('click', (e) => { e.stopPropagation(); menuNav.classList.toggle('hidden'); });
+    menuNav.querySelectorAll('button[data-tab]').forEach((b) => {
+      b.addEventListener('click', () => {
+        switchTab(b.dataset.tab);
+        menuNav.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+        menuNav.classList.add('hidden');
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!menuNav.classList.contains('hidden') && !menuNav.contains(e.target) && e.target !== menuBtn) {
+        menuNav.classList.add('hidden');
+      }
+    });
+  }
+  // Share button
+  const shareBtn = document.getElementById('share-btn');
+  if (shareBtn) shareBtn.addEventListener('click', (e) => { e.stopPropagation(); shareProfile(); });
 });
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+  const el = document.getElementById('tab-' + name);
+  if (el) el.classList.add('active');
+}
+
+function shareProfile() {
+  const toast = document.getElementById('toast');
+  const done = () => { if (toast) { toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 1600); } };
+  try {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(location.href).then(done).catch(done);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = location.href; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch { /* noop */ }
+      ta.remove(); done();
+    }
+  } catch { done(); }
+}
+
+function renderPresence(p) {
+  const row = document.getElementById('presence-row');
+  const dot = document.getElementById('presence-dot');
+  const txt = document.getElementById('presence-text');
+  if (!row || !dot || !txt) return;
+  if (!p || !p.presence || !p.presence.status) return;
+  row.classList.remove('hidden');
+  dot.className = 'presence-dot ' + String(p.presence.status).toLowerCase();
+  txt.textContent = String(p.presence.status);
+}
+
+function renderSpotify(p, cfg) {
+  try {
+    const spot = p && p.presence && p.presence.spotify;
+    const box = document.getElementById('spotify-now');
+    if (!box) return;
+    if (!spot) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    const art = document.getElementById('spotify-art');
+    const song = document.getElementById('spotify-song');
+    const artist = document.getElementById('spotify-artist');
+    if (art && spot.albumArt) art.src = spot.albumArt;
+    if (song) song.textContent = spot.song || '';
+    if (artist) artist.textContent = spot.artist || '';
+    const pTitle = document.getElementById('player-title');
+    if (pTitle && !(cfg && cfg.playerTitle)) pTitle.textContent = (spot.song || '') + ' - ' + (spot.artist || '');
+  } catch { /* noop */ }
+}
+
+function renderPlayerTitle(pf) {
+  const wrap = document.getElementById('player');
+  const title = document.getElementById('player-title');
+  if (!wrap || !title) return;
+  const raw = String((pf && (pf.audioUrl || pf.musicUrl)) || '').trim();
+  if (!raw) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  title.textContent = trackDisplayName(pf, '');
+}
+
+function renderLocation(pf) {
+  const el = document.getElementById('profile-location');
+  if (!el) return;
+  const loc = String(pf?.location || '').trim();
+  if (!loc) { el.style.display = 'none'; return; }
+  el.dataset.loc = loc;
+}
+setInterval(() => {
+  const el = document.getElementById('profile-location');
+  if (!el || !el.dataset.loc) return;
+  try {
+    el.textContent = el.dataset.loc + ' — ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch { el.textContent = el.dataset.loc; }
+}, 1000);
+
+function renderSkills(list) {
+  const box = document.getElementById('skills-list');
+  if (!box) return;
+  box.innerHTML = '';
+  (list || []).forEach((sk) => {
+    const pct = Math.max(0, Math.min(100, Number(sk.percent) || 0));
+    const wrap = document.createElement('div');
+    wrap.className = 'skill';
+    const top = document.createElement('div');
+    top.className = 'skill-top';
+    top.textContent = sk.name + '  ' + pct + '%';
+    const bar = document.createElement('div');
+    bar.className = 'skill-bar';
+    const fill = document.createElement('i');
+    fill.style.width = pct + '%';
+    bar.appendChild(fill);
+    wrap.appendChild(top);
+    wrap.appendChild(bar);
+    box.appendChild(wrap);
+  });
+}
+
+function renderProjects(list) {
+  const box = document.getElementById('projects-list');
+  if (!box) return;
+  box.innerHTML = '';
+  (list || []).forEach((pp) => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    const head = document.createElement('div');
+    head.className = 'project-head';
+    head.textContent = pp.name + (pp.status ? '  •  ' + pp.status : '');
+    card.appendChild(head);
+    if (pp.tagline) { const t = document.createElement('p'); t.className = 'project-tag'; t.textContent = pp.tagline; card.appendChild(t); }
+    if (pp.stats) { const s = document.createElement('p'); s.className = 'project-stats'; s.textContent = pp.stats; card.appendChild(s); }
+    if (Array.isArray(pp.features) && pp.features.length) {
+      const f = document.createElement('div');
+      f.className = 'project-feats';
+      pp.features.forEach((x) => { const sp = document.createElement('span'); sp.textContent = x; f.appendChild(sp); });
+      card.appendChild(f);
+    }
+    const links = document.createElement('div');
+    links.className = 'project-links';
+    if (pp.url) { const a = document.createElement('a'); a.href = normalizeUrl(pp.url); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Visit'; links.appendChild(a); }
+    if (pp.dashboardUrl && pp.dashboardUrl !== pp.url) { const a2 = document.createElement('a'); a2.href = normalizeUrl(pp.dashboardUrl); a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = 'Dashboard'; links.appendChild(a2); }
+    card.appendChild(links);
+    box.appendChild(card);
+  });
+}
 
 function showBackgroundFallback() {
   const fb = document.getElementById('bg-fallback');
@@ -295,20 +527,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!badgeGroup) return;
     badgeGroup.innerHTML = (list || []).map((b) => `
       <div class="badge-container">
-        <img src="${b.image}" alt="${b.label}" class="badge">
+        <img src="${b.image}" alt="${b.label}" class="badge" loading="lazy" onerror="this.parentElement.style.display='none'">
         <span class="tooltip">${b.label}</span>
       </div>
     `).join('');
   }
 
+  function iconFallbackLetter(label) {
+    const ch = String(label || '').trim().charAt(0).toUpperCase();
+    if (!ch) return 'L';
+    return ch;
+  }
+
   function renderSocials(list) {
     if (!socialLinksEl) return;
-    socialLinksEl.innerHTML = (list || []).map((s) => `
-      <a href="${s.url}" target="_blank" rel="noopener" title="${s.label}">
-        <img src="${s.image}" alt="${s.label}" class="social-icon">
-      </a>
-    `).join('');
+    socialLinksEl.innerHTML = (list || []).map((s) => {
+      const href = normalizeUrl(s.url);
+      const img = String(s.image || '').trim();
+      if (!href) return '';
+      const fb = iconFallbackLetter(s.label);
+      const inner = img
+        ? `<img src="${img}" alt="${s.label}" class="social-icon" loading="lazy" onerror="this.style.display='none'">`
+        : `<span class="social-fallback">${fb}</span>`;
+      return `<a href="${href}" target="_blank" rel="noopener" title="${s.label}">${inner}</a>`;
+    }).join('');
   }
+  renderLocation(CFG); renderSkills(CFG.skills || []); renderProjects(CFG.projects || []);
 renderBadges(CFG.badges || []);
   renderSocials(CFG.socials || []);
   if (CFG.profileImage) profilePicture.src = CFG.profileImage;
@@ -343,13 +587,8 @@ renderBadges(CFG.badges || []);
           const manual = CFG.badges || [];
           renderBadges([...p.badges, ...manual]);
         }
-        if (p.presence?.status) {
-          const dot = document.createElement('div');
-          dot.className = 'discord-status';
-          dot.textContent = `● ${p.presence.status}`;
-          dot.style.cssText = 'font-size:11px;opacity:.7;margin-top:4px;';
-          profileBio.after(dot);
-        }
+        renderPresence(p);
+        renderSpotify(p, CFG);
       })
       .catch(() => {});
   }
@@ -364,12 +603,12 @@ renderBadges(CFG.badges || []);
 
   // Media: background music from config (admin URL or uploaded /api/media/...).
   initMedia(CFG);
+  renderPlayerTitle(CFG);
 
   // Single background from config (uploaded/URL — set via /admin).
-  const video = CFG.backgroundVideo
-    || CFG.defaults?.backgroundVideo
-    || CFG.themes?.home?.video
+  const videoRaw = CFG.backgroundVideo
     || '';
+  const video = normalizeUrl(videoRaw);
   applyBackground(video);
 
   // ---- Typewriter: start message ----

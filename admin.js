@@ -206,6 +206,7 @@ function fillForm(c) {
   $('f-displayName').value = c.displayName || '';
   $('f-startMessage').value = c.startMessage || '';
   $('f-bioLines').value = (c.bioLines || []).join('\n');
+  $('f-location').value = c.location || '';
   $('f-profileImage').value = c.profileImage || '';
   $('f-discordUserId').value = c.discordUserId || '';
   $('f-discordSync').checked = !!c.discordSync;
@@ -213,6 +214,8 @@ function fillForm(c) {
   $('f-decorationScale').value = c.decorationScale ?? 1.2;
   $('f-backgroundVideo').value = c.backgroundVideo || '';
   $('f-audioUrl').value = c.audioUrl || '';
+  $('f-playerTitle').value = c.playerTitle || '';
+  $('f-skills').value = (c.skills || []).map((s) => `${s.name} | ${s.percent}`).join('\n');
   renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'Ảnh badge (bấm ⬆ hoặc link) | Tên badge', true);
   renderSocials('socials-list', c.socials || []);
   $('f-json').value = JSON.stringify(c, null, 2);
@@ -244,15 +247,21 @@ async function save() {
     merged.displayName = $('f-displayName').value;
     merged.startMessage = $('f-startMessage').value;
     merged.bioLines = $('f-bioLines').value.split('\n').map((s) => s.trim()).filter(Boolean);
-    merged.profileImage = $('f-profileImage').value;
+    merged.location = $('f-location').value.trim();
+    merged.profileImage = normalizeAdminUrl($('f-profileImage').value);
     merged.discordUserId = $('f-discordUserId').value.trim();
     merged.discordSync = $('f-discordSync').checked;
     merged.lanyard = $('f-lanyard').checked;
     merged.decorationScale = parseFloat($('f-decorationScale').value) || 1.2;
-    merged.backgroundVideo = $('f-backgroundVideo').value.trim();
-    merged.audioUrl = $('f-audioUrl').value.trim();
+    merged.backgroundVideo = normalizeAdminUrl($('f-backgroundVideo').value);
+    merged.audioUrl = normalizeAdminUrl($('f-audioUrl').value);
+    merged.playerTitle = $('f-playerTitle').value.trim();
+    merged.skills = $('f-skills').value.split('\n').map((s) => s.trim()).filter(Boolean).map((line) => {
+      const parts = line.split('|').map((x) => x.trim());
+      return { name: parts[0] || line, percent: Math.max(0, Math.min(100, parseInt(parts[1], 10) || 0)) };
+    });
     merged.badges = collectList('badges-list').map(parsePipe);
-    merged.socials = collectSocials('socials-list');
+    merged.socials = collectSocials('socials-list').map((s) => ({ image: normalizeAdminUrl(s.image), label: s.label, url: normalizeAdminUrl(s.url) }));
     delete merged._source;
 
     const r = await fetch('/api/admin/save', {
@@ -270,6 +279,41 @@ async function save() {
     }
   } catch (e) {
     setStatus(status, 'Lỗi: ' + e.message, false);
+  }
+}
+
+// ---------- helpers: URL normalize + audio test ----------
+// Keeps your correct https:// links untouched; only adds https:// if missing.
+function normalizeAdminUrl(u) {
+  let s = String(u || '').trim();
+  if (!s) return '';
+  if (s.startsWith('/') || s.startsWith('data:') || s.startsWith('blob:')) return s;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) return s;
+  return 'https://' + s;
+}
+
+async function testAudioUrl() {
+  const status = $('upload-audio-status');
+  const url = normalizeAdminUrl($('f-audioUrl').value);
+  $('f-audioUrl').value = url;
+  if (!url) return setStatus(status, 'Chưa có link nhạc.', false);
+  if (/youtube\.com\/watch|youtu\.be\/|spotify\.com|soundcloud\.com/i.test(url) && !/\.mp3/i.test(url)) {
+    return setStatus(status, 'Link này là trang nghe nhạc, không phải file MP3 — hãy dùng link .mp3 hoặc Upload.', false);
+  }
+  setStatus(status, 'Đang kiểm tra…', true);
+  try {
+    await new Promise((resolve, reject) => {
+      const t = new Audio();
+      t.preload = 'auto';
+      const timer = setTimeout(() => reject(new Error('timeout')), 12000);
+      t.oncanplaythrough = () => { clearTimeout(timer); resolve(); };
+      t.onerror = () => { clearTimeout(timer); reject(new Error('load error')); };
+      t.src = url;
+      t.load();
+    });
+    setStatus(status, 'OK — link phát được. Nhớ bấm Lưu.', true);
+  } catch (e) {
+    setStatus(status, 'Không tải được — link sai/hết hạn hoặc bị chặn. Thử link khác hoặc Upload.', false);
   }
 }
 
@@ -291,7 +335,7 @@ async function previewDiscord() {
       ? (p.decorationUrl
           ? `<div style="position:relative;display:inline-block;width:60px;height:60px;vertical-align:middle;margin-right:8px;">
                <img src="${p.avatarUrl}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
-               <img src="${p.decorationUrl}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92px;height:92px;border-radius:50%;object-fit:contain;pointer-events:none;">
+               <img src="${p.decorationUrl}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92px;height:92px;object-fit:contain;pointer-events:none;">
              </div>`
           : `<img src="${p.avatarUrl}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">`)
       : '(no avatar)';
@@ -322,11 +366,12 @@ async function uploadFile(fileInputId, urlInputId, statusId) {
   }
   setStatus(status, 'Đang upload…', true);
   try {
-    const buf = await file.arrayBuffer();
-    let binary = '';
-    const bytes = new Uint8Array(buf);
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    const dataBase64 = btoa(binary);
+    const dataBase64 = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+      fr.onerror = () => reject(new Error('read error'));
+      fr.readAsDataURL(file);
+    });
     const r = await fetch('/api/admin/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -351,6 +396,7 @@ $('save-btn').addEventListener('click', save);
 $('logout-btn').addEventListener('click', logout);
 $('reload-btn').addEventListener('click', openEditor);
 $('preview-btn').addEventListener('click', previewDiscord);
+$('test-audio-btn').addEventListener('click', testAudioUrl);
 $('upload-audio-btn').addEventListener('click', () => uploadFile('f-audio-file', 'f-audioUrl', 'upload-audio-status'));
 $('upload-video-btn').addEventListener('click', () => uploadFile('f-video-file', 'f-backgroundVideo', 'upload-video-status'));
 $('upload-profile-btn').addEventListener('click', () => uploadFile('f-profileImage-file', 'f-profileImage', 'save-status'));

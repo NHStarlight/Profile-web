@@ -14,20 +14,68 @@
   <div id="start-text"></div>
 </div>
 
+<!-- Hamburger menu (top-left): Profile / Skills / Projects -->
+<button id="menu-btn" aria-label="Menu"><span></span><span></span><span></span></button>
+<nav id="menu-nav" class="hidden">
+  <button data-tab="profile" class="active">Profile</button>
+  <button data-tab="skills">Skills</button>
+  <button data-tab="projects">Projects</button>
+</nav>
+
 <div id="profile-block" class="hidden">
   <div class="profile-container">
-    <div class="avatar-wrap">
-      <img id="profile-picture" class="profile-picture" alt="avatar">
-      <!-- Decoration overlay injected by script.js (Discord sync) -->
-    </div>
-    <h1 id="profile-name" class="profile-name"></h1>
-    <p id="profile-bio" class="profile-bio"></p>
-    <div id="badge-group" class="badge-group"></div>
-    <div id="social-links" class="social-links"></div>
-    <div class="visitor-counter">
-      <span id="visitor-count">0</span>
-      <span class="visitor-label">views</span>
-    </div>
+    <!-- TAB: PROFILE -->
+    <section id="tab-profile" class="tab active">
+      <div class="avatar-wrap">
+        <img id="profile-picture" class="profile-picture" alt="avatar">
+        <!-- Decoration overlay injected by script.js (Discord sync) -->
+      </div>
+      <h1 id="profile-name" class="profile-name"></h1>
+      <p id="profile-username" class="profile-username"></p>
+      <p id="profile-bio" class="profile-bio"></p>
+      <div id="presence-row" class="presence-row hidden">
+        <span id="presence-dot" class="presence-dot offline"></span>
+        <span id="presence-text">Offline</span>
+      </div>
+      <p id="profile-location" class="profile-location"></p>
+      <div id="spotify-now" class="spotify-now hidden">
+        <img id="spotify-art" alt="">
+        <div><div id="spotify-song"></div><div id="spotify-artist"></div></div>
+      </div>
+      <div id="badge-group" class="badge-group"></div>
+      <div id="social-links" class="social-links"></div>
+      <!-- Spotify-style music player (same track as background music) -->
+      <div id="player" class="player hidden">
+        <button id="player-toggle" aria-label="Play / pause">▶</button>
+        <div class="player-main">
+          <div id="player-title">No music</div>
+          <div class="player-row">
+            <span id="player-cur">0:00</span>
+            <input id="player-seek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+            <span id="player-dur">0:00</span>
+          </div>
+        </div>
+      </div>
+      <div id="audio-error" class="audio-error hidden"></div>
+      <div class="profile-foot">
+        <div class="visitor-counter">
+          <span id="visitor-count">0</span>
+          <span class="visitor-label">views</span>
+        </div>
+        <button id="share-btn" class="share-btn">Share profile</button>
+      </div>
+      <div id="toast" class="toast hidden">Đã copy!</div>
+    </section>
+    <!-- TAB: SKILLS -->
+    <section id="tab-skills" class="tab">
+      <h2 class="tab-title">Skills</h2>
+      <div id="skills-list" class="skills-list"></div>
+    </section>
+    <!-- TAB: PROJECTS -->
+    <section id="tab-projects" class="tab">
+      <h2 class="tab-title">Projects</h2>
+      <div id="projects-list" class="projects-list"></div>
+    </section>
   </div>
 </div>
 
@@ -41,7 +89,7 @@
   </svg>
 </button>
 
-<audio id="background-music" loop></audio>
+<audio id="background-music" loop preload="auto"></audio>
 
 <script>
   fetch('/api/profile')
@@ -52,3 +100,4 @@
 <script src="script.js"></script>
 </body>
 </html>
+
