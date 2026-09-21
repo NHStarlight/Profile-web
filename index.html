@@ -63,12 +63,26 @@
           <span class="visitor-label">views</span>
         </div>
         <button id="share-btn" class="share-btn">Share profile</button>
+        <button id="qr-btn" class="share-btn">QR</button>
       </div>
-      <div id="toast" class="toast hidden">Đã copy!</div>
+      <div id="toast" class="toast hidden">Copied!</div>
+      <div id="qr-modal" class="qr-modal hidden">
+        <div class="qr-box">
+          <img id="qr-img" alt="Profile QR code">
+          <div class="qr-row">
+            <button id="qr-copy" class="share-btn">Copy link</button>
+            <button id="qr-close" class="share-btn">Close</button>
+          </div>
+        </div>
+      </div>
     </section>
     <!-- TAB: SKILLS -->
     <section id="tab-skills" class="tab">
       <h2 class="tab-title">Skills</h2>
+      <div class="orbit-wrap">
+        <div id="orbit" class="orbit"></div>
+        <div class="orbit-center">CODE</div>
+      </div>
       <div id="skills-list" class="skills-list"></div>
     </section>
     <!-- TAB: PROJECTS -->
@@ -80,7 +94,7 @@
 </div>
 
 <div id="music-hint">Tap for music</div>
-<button id="music-toggle" aria-label="Bật / tắt nhạc">
+<button id="music-toggle" aria-label="Toggle music">
   <span class="eq"><i></i><i></i><i></i><i></i></span>
   <svg class="ic-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon>

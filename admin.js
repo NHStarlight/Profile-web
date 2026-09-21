@@ -18,9 +18,9 @@ async function parseResp(r) {
     try { text = await r.text(); } catch {}
     const brief = text.replace(/\s+/g, ' ').slice(0, 120);
     const hint = (r.status === 413 || /Request Entity Too Large/i.test(text))
-      ? ' — file quá giới hạn Vercel (~4.5MB), hãy up lên catbox.moe rồi dán link.'
+      ? ' — file exceeds the Vercel limit (~4.5MB), upload to catbox.moe and paste the link.'
       : '';
-    return { ok: false, error: `Lỗi HTTP ${r.status}${brief ? ' (' + brief + ')' : ''}${hint}` };
+    return { ok: false, error: `HTTP ${r.status}${brief ? ' (' + brief + ')' : ''}${hint}` };
   }
 }
 
@@ -43,13 +43,13 @@ async function login() {
     });
     const j = await parseResp(r);
     if (j.ok) {
-      setStatus(status, 'OK — đang mở editor…', true);
+      setStatus(status, 'OK — opening editor…', true);
       await openEditor();
     } else {
-      setStatus(status, 'Sai mật khẩu.', false);
+      setStatus(status, 'Wrong password.', false);
     }
   } catch (e) {
-    setStatus(status, 'Lỗi kết nối: ' + e.message, false);
+    setStatus(status, 'Connection error: ' + e.message, false);
   }
 }
 
@@ -75,12 +75,12 @@ function listItemRow(value, placeholder, withUpload) {
     const btn = document.createElement('button');
     btn.textContent = '⬆';
     btn.className = 'secondary';
-    btn.title = 'Chọn file từ máy';
+    btn.title = 'Choose a file from your device';
     btn.onclick = () => fileInput.click();
     fileInput.onchange = async () => {
       const file = fileInput.files?.[0];
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) { alert('File > 5MB — hãy up lên catbox.moe rồi dán link.'); return; }
+      if (file.size > 5 * 1024 * 1024) { alert('File > 5MB — upload to catbox.moe and paste the link.'); return; }
       btn.textContent = '…';
       try {
         const buf = await file.arrayBuffer();
@@ -94,9 +94,9 @@ function listItemRow(value, placeholder, withUpload) {
         });
         const j = await parseResp(r);
         if (j.ok) input.value = j.url;
-        else alert('Upload lỗi: ' + (j.error || 'unknown'));
+        else alert('Upload error: ' + (j.error || 'unknown'));
       } catch (e) {
-        alert('Upload lỗi: ' + e.message);
+        alert('Upload error: ' + e.message);
       }
       btn.textContent = '⬆';
     };
@@ -129,18 +129,18 @@ function parsePipe(value) {
   return { image: value.slice(0, idx).trim(), label: value.slice(idx + 1).trim() };
 }
 
-// ---------- social editor: tách riêng Icon (upload/link) + Link ----------
+// ---------- social editor: separate Icon (upload/link) + Link ----------
 function socialItemRow(image, url) {
   const div = document.createElement('div');
   div.className = 'list-item';
   const iconInput = document.createElement('input');
   iconInput.type = 'text';
   iconInput.value = image || '';
-  iconInput.placeholder = 'Icon (bấm ⬆ hoặc link ảnh)';
+  iconInput.placeholder = 'Icon (upload or image link)';
   const linkInput = document.createElement('input');
   linkInput.type = 'text';
   linkInput.value = url || '';
-  linkInput.placeholder = 'Link social (vd: discord.gg/abc)';
+  linkInput.placeholder = 'Social link (e.g. discord.gg/abc)';
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = 'image/*';
@@ -148,12 +148,12 @@ function socialItemRow(image, url) {
   const btn = document.createElement('button');
   btn.textContent = '⬆';
   btn.className = 'secondary';
-  btn.title = 'Chọn icon từ máy';
+  btn.title = 'Choose an icon from your device';
   btn.onclick = () => fileInput.click();
   fileInput.onchange = async () => {
     const file = fileInput.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('File > 5MB — hãy up lên catbox.moe rồi dán link.'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('File > 5MB — upload to catbox.moe and paste the link.'); return; }
     btn.textContent = '…';
     try {
       const buf = await file.arrayBuffer();
@@ -167,9 +167,9 @@ function socialItemRow(image, url) {
       });
       const j = await parseResp(r);
       if (j.ok) iconInput.value = j.url;
-      else alert('Upload lỗi: ' + (j.error || 'unknown'));
+      else alert('Upload error: ' + (j.error || 'unknown'));
     } catch (e) {
-      alert('Upload lỗi: ' + e.message);
+      alert('Upload error: ' + e.message);
     }
     btn.textContent = '⬆';
   };
@@ -216,7 +216,7 @@ function fillForm(c) {
   $('f-audioUrl').value = c.audioUrl || '';
   $('f-playerTitle').value = c.playerTitle || '';
   $('f-skills').value = (c.skills || []).map((s) => `${s.name} | ${s.percent}`).join('\n');
-  renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'Ảnh badge (bấm ⬆ hoặc link) | Tên badge', true);
+  renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'Badge image (upload or link) | Badge name', true);
   renderSocials('socials-list', c.socials || []);
   $('f-json').value = JSON.stringify(c, null, 2);
 }
@@ -240,7 +240,7 @@ async function save() {
     try {
       merged = JSON.parse($('f-json').value);
     } catch (e) {
-      return setStatus(status, 'JSON nâng cao không hợp lệ: ' + e.message, false);
+      return setStatus(status, 'Invalid advanced JSON: ' + e.message, false);
     }
 
     merged.title = $('f-title').value;
@@ -273,12 +273,12 @@ async function save() {
     if (j.ok) {
       CONFIG = j.config;
       fillForm(CONFIG);
-      setStatus(status, '✅ Đã lưu — trang profile cập nhật ngay (cache 15s).', true);
+      setStatus(status, '✅ Saved — profile updates live (15s cache).', true);
     } else {
-      setStatus(status, 'Lỗi: ' + (j.error || 'unknown'), false);
+      setStatus(status, 'Error: ' + (j.error || 'unknown'), false);
     }
   } catch (e) {
-    setStatus(status, 'Lỗi: ' + e.message, false);
+    setStatus(status, 'Error: ' + e.message, false);
   }
 }
 
@@ -296,11 +296,11 @@ async function testAudioUrl() {
   const status = $('upload-audio-status');
   const url = normalizeAdminUrl($('f-audioUrl').value);
   $('f-audioUrl').value = url;
-  if (!url) return setStatus(status, 'Chưa có link nhạc.', false);
+  if (!url) return setStatus(status, 'No music link yet.', false);
   if (/youtube\.com\/watch|youtu\.be\/|spotify\.com|soundcloud\.com/i.test(url) && !/\.mp3/i.test(url)) {
-    return setStatus(status, 'Link này là trang nghe nhạc, không phải file MP3 — hãy dùng link .mp3 hoặc Upload.', false);
+    return setStatus(status, 'This is a music page, not a direct MP3 — use a .mp3 link or Upload.', false);
   }
-  setStatus(status, 'Đang kiểm tra…', true);
+  setStatus(status, 'Checking…', true);
   try {
     await new Promise((resolve, reject) => {
       const t = new Audio();
@@ -311,23 +311,23 @@ async function testAudioUrl() {
       t.src = url;
       t.load();
     });
-    setStatus(status, 'OK — link phát được. Nhớ bấm Lưu.', true);
+    setStatus(status, 'OK — link works. Remember to Save.', true);
   } catch (e) {
-    setStatus(status, 'Không tải được — link sai/hết hạn hoặc bị chặn. Thử link khác hoặc Upload.', false);
+    setStatus(status, 'Could not load — wrong/expired/blocked link. Try another or Upload.', false);
   }
 }
 
 async function previewDiscord() {
   const box = $('discord-preview');
   const id = $('f-discordUserId').value.trim();
-  box.innerHTML = 'Đang tải…';
+  box.innerHTML = 'Loading…';
   try {
     const r = await fetch(`/api/admin/preview?id=${encodeURIComponent(id)}`);
     const j = await parseResp(r);
     const p = j.profile;
     if (!p?.available) {
-      box.innerHTML = `❌ Không lấy được dữ liệu (${p?.reason || 'unknown'}).<br>
-        → Nếu chưa có <code>DISCORD_BOT_TOKEN</code> trên Vercel, user phải join <code>discord.gg/lanyard</code> để dùng Lanyard.`;
+      box.innerHTML = `❌ Could not fetch data (${p?.reason || 'unknown'}).<br>
+        → Without <code>DISCORD_BOT_TOKEN</code> on Vercel, the user must join <code>discord.gg/lanyard</code> to use Lanyard.`;
       return;
     }
     const badges = (p.badges || []).map((b) => `<img src="${b.image}" title="${b.label}">`).join(' ') || '(none)';
@@ -340,14 +340,14 @@ async function previewDiscord() {
           : `<img src="${p.avatarUrl}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">`)
       : '(no avatar)';
     box.innerHTML = `
-      ✅ Nguồn: <code>${p.source}</code><br>
+      ✅ Source: <code>${p.source}</code><br>
       ${avatar} <strong>${p.displayName || p.username}</strong><br>
       Decoration: ${p.decorationUrl ? '✅' : '—'} · Banner: ${p.bannerUrl ? '✅' : '—'}<br>
       Badges (${(p.badges || []).length}): ${badges}
       ${p.presence ? `<br>Status: ${p.presence.status}${p.presence.spotify ? ` · 🎵 ${p.presence.spotify.song} — ${p.presence.spotify.artist}` : ''}` : ''}
     `;
   } catch (e) {
-    box.innerHTML = 'Lỗi: ' + e.message;
+    box.innerHTML = 'Error: ' + e.message;
   }
 }
 
@@ -357,14 +357,14 @@ async function uploadFile(fileInputId, urlInputId, statusId) {
   const input = $(fileInputId);
   const file = input?.files?.[0];
   if (!file) {
-    setStatus(status, 'Chưa chọn file.', false);
+    setStatus(status, 'No file selected.', false);
     return;
   }
   if (file.size > 5 * 1024 * 1024) {
-    setStatus(status, `File ${(file.size / 1048576).toFixed(1)}MB vượt 5MB — hãy up lên catbox.moe rồi dán link.`, false);
+    setStatus(status, `File ${(file.size / 1048576).toFixed(1)}MB exceeds 5MB — upload to catbox.moe and paste the link.`, false);
     return;
   }
-  setStatus(status, 'Đang upload…', true);
+  setStatus(status, 'Uploading…', true);
   try {
     const dataBase64 = await new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -380,12 +380,12 @@ async function uploadFile(fileInputId, urlInputId, statusId) {
     const j = await parseResp(r);
     if (j.ok) {
       $(urlInputId).value = j.url;
-      setStatus(status, `✅ Uploaded → ${j.url} (nhớ bấm Lưu)`, true);
+      setStatus(status, `✅ Uploaded → ${j.url} (remember to Save)`, true);
     } else {
-      setStatus(status, 'Lỗi: ' + (j.error || 'unknown'), false);
+      setStatus(status, 'Error: ' + (j.error || 'unknown'), false);
     }
   } catch (e) {
-    setStatus(status, 'Lỗi: ' + e.message, false);
+    setStatus(status, 'Error: ' + e.message, false);
   }
 }
 
@@ -401,7 +401,7 @@ $('upload-audio-btn').addEventListener('click', () => uploadFile('f-audio-file',
 $('upload-video-btn').addEventListener('click', () => uploadFile('f-video-file', 'f-backgroundVideo', 'upload-video-status'));
 $('upload-profile-btn').addEventListener('click', () => uploadFile('f-profileImage-file', 'f-profileImage', 'save-status'));
 $('add-badge').addEventListener('click', () =>
-  $('badges-list').appendChild(listItemRow('', 'Ảnh badge (bấm ⬆ hoặc link) | Tên badge', true)));
+  $('badges-list').appendChild(listItemRow('', 'Badge image (upload or link) | Badge name', true)));
 $('add-social').addEventListener('click', () =>
   $('socials-list').appendChild(socialItemRow('', '')));
 

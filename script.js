@@ -47,7 +47,7 @@ function resolveAudioSrc(pf) {
   if (!raw) return { src: '', error: '' };
   const src = normalizeUrl(raw);
   if (isNonDirectAudioLink(src)) {
-    return { src: '', error: 'Link này là trang nghe nhạc (YouTube/Spotify), không phải file MP3 trực tiếp — hãy dùng link .mp3 (VD: catbox.moe) hoặc Upload file.' };
+    return { src: '', error: 'This is a music page link (YouTube/Spotify), not a direct MP3 file — use a direct .mp3 link or Upload a file.' };
   }
   return { src, error: '' };
 }
@@ -236,7 +236,7 @@ function updateMusicBtn() {
   if (!btn || !a) return;
   const playing = !!a.src && !a.paused && !a.muted;
   btn.classList.toggle('playing', playing);
-  // pill hint "Bật nhạc" — visible until music is actually audible
+  // pill hint "Tap for music" — visible until music is actually audible
   const hint = document.getElementById('music-hint');
   if (hint) hint.classList.toggle('hidden', playing);
 }
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
   a.addEventListener('error', () => {
     const src = a.getAttribute('src') || a.src || '';
     if (!src) return;
-    showAudioError('Không tải được file nhạc — link có thể sai, hết hạn, hoặc server chặn (CORS). Thử link .mp3 khác hoặc Upload file.');
+    showAudioError('Could not load the audio file — the link may be wrong, expired, or blocked. Try another .mp3 link or Upload a file.');
   });
   // Keep the Spotify-style player in sync with the real <audio>.
   const pt = document.getElementById('player-toggle');
@@ -315,15 +315,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  // Share button
+  // Share + QR buttons
   const shareBtn = document.getElementById('share-btn');
   if (shareBtn) shareBtn.addEventListener('click', (e) => { e.stopPropagation(); shareProfile(); });
+  const qrBtn = document.getElementById('qr-btn');
+  if (qrBtn) qrBtn.addEventListener('click', (e) => { e.stopPropagation(); openQr(); });
+  const qrClose = document.getElementById('qr-close');
+  if (qrClose) qrClose.addEventListener('click', (e) => { e.stopPropagation(); closeQr(); });
+  const qrCopy = document.getElementById('qr-copy');
+  if (qrCopy) qrCopy.addEventListener('click', (e) => { e.stopPropagation(); shareProfile(); });
+  const qrModal = document.getElementById('qr-modal');
+  if (qrModal) qrModal.addEventListener('click', (e) => { if (e.target === qrModal) closeQr(); });
 });
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
   const el = document.getElementById('tab-' + name);
   if (el) el.classList.add('active');
+}
+
+function openQr() {
+  const modal = document.getElementById('qr-modal');
+  const img = document.getElementById('qr-img');
+  if (!modal || !img) return;
+  img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(location.href);
+  modal.classList.remove('hidden');
+}
+
+function closeQr() {
+  const modal = document.getElementById('qr-modal');
+  if (modal) modal.classList.add('hidden');
 }
 
 function shareProfile() {
@@ -395,10 +416,34 @@ setInterval(() => {
   } catch { el.textContent = el.dataset.loc; }
 }, 1000);
 
+// Rotating code-icon orbit: icons revolve around the center while each
+// icon counter-rotates to stay upright (afkar-style effect, vanilla CSS).
+function renderOrbit(list) {
+  const orbit = document.getElementById('orbit');
+  if (!orbit) return;
+  orbit.innerHTML = '';
+  const items = (list || []).slice(0, 8);
+  const n = Math.max(items.length, 1);
+  const R = 78;
+  items.forEach((sk, i) => {
+    const el = document.createElement('div');
+    el.className = 'orbit-item';
+    const short = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
+    el.textContent = short;
+    el.title = sk.name || '';
+    const ang = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const x = Math.cos(ang) * R;
+    const y = Math.sin(ang) * R;
+    el.style.transform = 'translate(calc(-50% + ' + x.toFixed(1) + 'px), calc(-50% + ' + y.toFixed(1) + 'px))';
+    orbit.appendChild(el);
+  });
+}
+
 function renderSkills(list) {
   const box = document.getElementById('skills-list');
   if (!box) return;
   box.innerHTML = '';
+  renderOrbit(list);
   (list || []).forEach((sk) => {
     const pct = Math.max(0, Math.min(100, Number(sk.percent) || 0));
     const wrap = document.createElement('div');

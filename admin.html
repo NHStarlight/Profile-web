@@ -51,15 +51,15 @@
 <body>
 <div class="wrap">
   <h1>⭐ Profile Editor</h1>
-  <p class="sub">Mọi thay đổi lưu vào database và áp dụng cho trang profile ngay — không cần sửa code hay deploy lại.</p>
+  <p class="sub">All changes are saved to the database and applied to the profile instantly — no code edits or redeploys needed.</p>
 
   <!-- LOGIN -->
   <div id="login-view" class="card">
-    <h2>Đăng nhập</h2>
-    <label>Mật khẩu admin</label>
+    <h2>Login</h2>
+    <label>Admin password</label>
     <input type="password" id="password" placeholder="••••••••">
     <div style="margin-top:14px;">
-      <button id="login-btn">Đăng nhập</button>
+      <button id="login-btn">Login</button>
     </div>
     <div id="login-status" class="status"></div>
   </div>
@@ -67,57 +67,57 @@
   <!-- EDITOR -->
   <div id="editor-view" class="hidden">
     <div class="card">
-      <h2>Thông tin chính</h2>
-      <label>Tiêu đề tab</label>
+      <h2>Main info</h2>
+      <label>Tab title</label>
       <input type="text" id="f-title">
-      <label>Tên hiển thị</label>
+      <label>Display name</label>
       <input type="text" id="f-displayName">
-      <label>Câu mở đầu (màn hình start)</label>
+      <label>Enter-screen text</label>
       <input type="text" id="f-startMessage">
-      <label>Bio (mỗi dòng một câu, sẽ luân phiên hiện)</label>
+      <label>Bio (one line per message, rotates)</label>
       <textarea id="f-bioLines"></textarea>
-      <label>Địa điểm (VD: Vietnam — sẽ hiện kèm giờ trực tiếp)</label>
+      <label>Location (e.g. Vietnam — shown with live clock)</label>
       <input type="text" id="f-location" placeholder="Vietnam">
-      <label>Ảnh profile (URL hoặc bấm ⬆ chọn file từ máy)</label>
+      <label>Profile image (URL or upload from your device)</label>
       <div class="upload-row">
         <input type="text" id="f-profileImage">
         <input type="file" id="f-profileImage-file" accept="image/*" style="display:none;">
         <button class="secondary" id="upload-profile-btn">⬆</button>
       </div>
-      <p class="sub">Điền URL ở đây sẽ thay avatar Discord (để trống = dùng avatar Discord).</p>
+      <p class="sub">A URL here overrides the Discord avatar (empty = use Discord avatar).</p>
     </div>
 
     <div class="card">
       <h2>Discord Sync</h2>
       <label>Discord User ID</label>
       <input type="text" id="f-discordUserId">
-      <div class="check"><input type="checkbox" id="f-discordSync"><span>Tự động lấy avatar + badges từ Discord</span></div>
-      <div class="check"><input type="checkbox" id="f-lanyard"><span>Hiện presence / Spotify (cần user đã join discord.gg/lanyard)</span></div>
-      <label>Decoration scale (kích thước khung decor quanh PFP — 1.2 = 120%, thấp = khít PFP)</label>
+      <div class="check"><input type="checkbox" id="f-discordSync"><span>Auto-fetch avatar + badges from Discord</span></div>
+      <div class="check"><input type="checkbox" id="f-lanyard"><span>Show presence / Spotify (user must join discord.gg/lanyard)</span></div>
+      <label>Decoration scale (decor size around PFP — 1.2 = 120%, lower = tighter)</label>
       <input type="number" id="f-decorationScale" step="0.05" min="1" max="2" placeholder="1.2">
       <div style="margin-top:12px;">
-        <button id="preview-btn" class="secondary">Xem trước dữ liệu Discord</button>
+        <button id="preview-btn" class="secondary">Preview Discord data</button>
       </div>
       <div id="discord-preview" class="preview-box" style="margin-top:12px;"></div>
     </div>
 
     <div class="card">
-      <h2>Badges thủ công (hiện sau badges Discord)</h2>
+      <h2>Manual badges (shown after Discord badges)</h2>
       <div id="badges-list"></div>
-      <button class="secondary" id="add-badge">+ Thêm badge</button>
-      <p class="sub" style="margin-top:8px;">Bấm ⬆ chọn ảnh từ máy (hoặc dán link ảnh trực tiếp) | Tên badge</p>
+      <button class="secondary" id="add-badge">+ Add badge</button>
+      <p class="sub" style="margin-top:8px;">Upload an image from your device (or paste a direct image link) | Badge name</p>
     </div>
 
     <div class="card">
       <h2>Social links</h2>
       <div id="socials-list"></div>
-      <button class="secondary" id="add-social">+ Thêm social</button>
-      <p class="sub" style="margin-top:8px;">Icon: bấm ⬆ chọn ảnh từ máy · Link: dán đường dẫn (vd: discord.gg/abc)</p>
+      <button class="secondary" id="add-social">+ Add social</button>
+      <p class="sub" style="margin-top:8px;">Icon: upload from your device · Link: paste the URL (e.g. discord.gg/abc)</p>
     </div>
 
     <div class="card">
-      <h2>Nền &amp; Nhạc</h2>
-      <label>Video nền (URL — file lớn nên dùng catbox.moe / link ngoài)</label>
+      <h2>Background &amp; Music</h2>
+      <label>Background video (URL — large files: use catbox.moe / external link)</label>
       <input type="url" id="f-backgroundVideo" placeholder="https://files.catbox.moe/xxx.mp4">
       <div class="upload-row">
         <input type="file" id="f-video-file" accept="video/mp4,video/webm" style="font-size:11px;">
@@ -125,39 +125,39 @@
       </div>
       <div id="upload-video-status" class="status"></div>
 
-      <label style="margin-top:16px;">Nhạc nền (URL hoặc upload — ≤5MB)</label>
-      <input type="url" id="f-audioUrl" placeholder="https://... /music.mp3 hoặc /api/media/...">
+      <label style="margin-top:16px;">Background music (URL or upload — ≤5MB)</label>
+      <input type="url" id="f-audioUrl" placeholder="https://... /music.mp3 or /api/media/...">
       <div class="upload-row">
         <button class="secondary" id="test-audio-btn">▶ Test URL</button>
       </div>
-      <label>Tên bài hát hiện trong player</label>
-      <input type="text" id="f-playerTitle" placeholder="Tên bài — Ca sĩ">
+      <label>Track title shown in the player</label>
+      <input type="text" id="f-playerTitle" placeholder="Track title — Artist">
       <div class="upload-row">
         <input type="file" id="f-audio-file" accept="audio/*" style="font-size:11px;">
-        <button class="secondary" id="upload-audio-btn">⬆ Upload nhạc</button>
+        <button class="secondary" id="upload-audio-btn">⬆ Upload music</button>
       </div>
       <div id="upload-audio-status" class="status"></div>
-      <p class="sub" style="margin-top:8px;">Bỏ trống = nền gradient động / không nhạc. Video/nhạc lớn hơn 5MB hãy up lên catbox.moe rồi dán link.</p>
+      <p class="sub" style="margin-top:8px;">Empty = animated gradient / no music. For video/music over 5MB, upload to catbox.moe and paste the link.</p>
     </div>
 
     <div class="card">
-      <h2>Skills (Tên | % — mỗi dòng một skill)</h2>
+      <h2>Skills (Name | % — one skill per line)</h2>
       <textarea id="f-skills" placeholder="JavaScript | 85"></textarea>
     </div>
 
     <div class="card">
-      <h2>Nâng cao (JSON)</h2>
-      <label>JSON cấu hình đầy đủ (sẽ ghi đè các field ở trên)</label>
+      <h2>Advanced (JSON)</h2>
+      <label>Full config JSON (overrides the fields above)</label>
       <textarea id="f-json" style="min-height:200px;font-size:11px;"></textarea>
     </div>
 
     <div style="display:flex;gap:10px;">
-      <button id="save-btn">💾 Lưu thay đổi</button>
-      <button class="secondary" id="reload-btn">↻ Tải lại từ DB</button>
-      <button class="danger" id="logout-btn">Đăng xuất</button>
+      <button id="save-btn">💾 Save changes</button>
+      <button class="secondary" id="reload-btn">↻ Reload from DB</button>
+      <button class="danger" id="logout-btn">Logout</button>
     </div>
     <div id="save-status" class="status"></div>
-    <p class="sub" style="margin-top:16px;"><a href="/" style="color:#00CED1;">← Về trang profile</a></p>
+    <p class="sub" style="margin-top:16px;"><a href="/" style="color:#00CED1;">← Back to profile</a></p>
   </div>
 </div>
 
