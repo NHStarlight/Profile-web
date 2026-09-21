@@ -285,7 +285,9 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 .audio-error { font-size: 12px; color: #f87171; background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.3); border-radius: 8px; padding: 8px 10px; margin-bottom: 14px; }
 .audio-error.hidden { display: none; }
 .skills-list { display: flex; flex-direction: column; gap: 14px; text-align: left; }
-.skill-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+.skill-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 6px; }
+.skill-left { display: flex; align-items: center; gap: 8px; }
+.skill-icon { width: 20px; height: 20px; object-fit: contain; }
 .skill-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
 .skill-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
 .projects-list { display: flex; flex-direction: column; gap: 14px; text-align: left; }
@@ -318,6 +320,20 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: bold; color: var(--text);
   background: rgba(13,19,34,.95); border: 1px solid rgba(0,206,209,.45);
+  box-shadow: 0 0 14px rgba(0,206,209,.25);
+}
+.orbit-item img { width: 28px; height: 28px; object-fit: contain; }
+.orbit-item:hover { box-shadow: 0 0 22px rgba(0,206,209,.6); transform: scale(1.12); transition: transform .15s ease, box-shadow .15s ease; }
+/* glowing trail behind each moving logo */
+.orbit-trail {
+  position: absolute; left: 50%; top: 50%;
+  width: 55px; height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg, rgba(0,206,209,.75), rgba(0,206,209,0));
+  transform: rotate(var(--trail-rot, 0deg)) translateX(-42px);
+  transform-origin: right center;
+  opacity: var(--trail-op, 0);
+  pointer-events: none;
+  filter: blur(0.5px);
 }
 /* ---------- QR share modal (zaminhh-style) ---------- */
 .qr-modal {

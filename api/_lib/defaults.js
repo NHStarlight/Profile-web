@@ -9,18 +9,18 @@ const DEFAULT_CONFIG = {
     '"Hello, World!"',
   ],
   location: 'Vietnam',
-  profileImage: '', // trống → dùng avatar Discord khi bật sync
+  profileImage: '', // empty = use Discord avatar when sync is on
   discordUserId: '1198136184526864475',
   discordSync: true,      // pull avatar/banner/badges from Discord API
   lanyard: false,         // live presence via lanyard.rest (user must join their Discord)
-  decorationScale: 1.2,   // kích thước decor quanh PFP (1.2 = 120%)
-  badges: [],             // Discord sync tự thêm badges; thêm thủ công qua admin
+  decorationScale: 1.2,   // decor size around PFP (1.2 = 120%)
+  badges: [],             // Discord sync adds badges; manual ones via admin
   socials: [],
   skills: [
-    { name: 'JavaScript', percent: 85 },
-    { name: 'Python', percent: 80 },
-    { name: 'HTML', percent: 90 },
-    { name: 'CSS', percent: 85 },
+    { name: 'JavaScript', percent: 85, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg' },
+    { name: 'Python', percent: 80, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg' },
+    { name: 'HTML', percent: 90, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg' },
+    { name: 'CSS', percent: 85, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg' },
   ],
   projects: [
     {

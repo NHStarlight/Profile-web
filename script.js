@@ -414,9 +414,9 @@ setInterval(() => {
   } catch { el.textContent = el.dataset.loc; }
 }, 1000);
 
-// Rotating code-icon orbit: JS-driven rotation (afkar-style).
-// The container angle advances every frame; each icon is placed on the
-// circle and counter-rotated so its label stays upright and readable.
+// Rotating logo orbit (afkar-style): real language logos revolve around the
+// center, each with a glowing trail tail + counter-rotation so logos stay
+// upright. Falls back to short text labels if a logo fails to load.
 let orbitAngle = 0;
 let orbitTimer = null;
 function renderOrbit(list) {
@@ -428,8 +428,22 @@ function renderOrbit(list) {
   const nodes = items.map((sk) => {
     const el = document.createElement('div');
     el.className = 'orbit-item';
-    const short = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
-    el.textContent = short;
+    if (sk.icon) {
+      const img = document.createElement('img');
+      img.src = sk.icon;
+      img.alt = sk.name || '';
+      img.draggable = false;
+      img.onerror = () => {
+        img.remove();
+        el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
+      };
+      el.appendChild(img);
+      const trail = document.createElement('div');
+      trail.className = 'orbit-trail';
+      el.appendChild(trail);
+    } else {
+      el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
+    }
     el.title = sk.name || '';
     orbit.appendChild(el);
     return el;
@@ -443,6 +457,9 @@ function renderOrbit(list) {
       const y = Math.sin(ang) * R;
       el.style.left = 'calc(50% + ' + x.toFixed(1) + 'px)';
       el.style.top = 'calc(50% + ' + y.toFixed(1) + 'px)';
+      // trail points opposite to motion direction
+      el.style.setProperty('--trail-rot', (-(ang + Math.PI / 2) * 180 / Math.PI).toFixed(1) + 'deg');
+      el.style.setProperty('--trail-op', '1');
     });
   };
   layout();
@@ -463,7 +480,19 @@ function renderSkills(list) {
     wrap.className = 'skill';
     const top = document.createElement('div');
     top.className = 'skill-top';
-    top.textContent = sk.name + '  ' + pct + '%';
+    const left = document.createElement('span');
+    left.className = 'skill-left';
+    if (sk.icon) {
+      const ic = document.createElement('img');
+      ic.src = sk.icon; ic.alt = sk.name || ''; ic.className = 'skill-icon';
+      ic.onerror = () => ic.remove();
+      left.appendChild(ic);
+    }
+    left.appendChild(document.createTextNode(sk.name));
+    const right = document.createElement('span');
+    right.textContent = pct + '%';
+    top.appendChild(left);
+    top.appendChild(right);
     const bar = document.createElement('div');
     bar.className = 'skill-bar';
     const fill = document.createElement('i');

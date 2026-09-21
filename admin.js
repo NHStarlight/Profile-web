@@ -215,7 +215,7 @@ function fillForm(c) {
   $('f-backgroundVideo').value = c.backgroundVideo || '';
   $('f-audioUrl').value = c.audioUrl || '';
   $('f-playerTitle').value = c.playerTitle || '';
-  $('f-skills').value = (c.skills || []).map((s) => `${s.name} | ${s.percent}`).join('\n');
+  $('f-skills').value = (c.skills || []).map((s) => [s.name, s.percent, s.icon].filter((x) => x !== undefined && x !== '').join(' | ')).join('\n');
   renderList('badges-list', (c.badges || []).map((b) => `${b.image} | ${b.label}`), 'Badge image (upload or link) | Badge name', true);
   renderSocials('socials-list', c.socials || []);
   $('f-json').value = JSON.stringify(c, null, 2);
@@ -258,7 +258,7 @@ async function save() {
     merged.playerTitle = $('f-playerTitle').value.trim();
     merged.skills = $('f-skills').value.split('\n').map((s) => s.trim()).filter(Boolean).map((line) => {
       const parts = line.split('|').map((x) => x.trim());
-      return { name: parts[0] || line, percent: Math.max(0, Math.min(100, parseInt(parts[1], 10) || 0)) };
+      return { name: parts[0] || line, percent: Math.max(0, Math.min(100, parseInt(parts[1], 10) || 0)), icon: parts[2] || '' };
     });
     merged.badges = collectList('badges-list').map(parsePipe);
     merged.socials = collectSocials('socials-list').map((s) => ({ image: normalizeAdminUrl(s.image), label: s.label, url: normalizeAdminUrl(s.url) }));
