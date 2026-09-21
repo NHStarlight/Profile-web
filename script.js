@@ -467,7 +467,7 @@ function renderOrbit(list) {
   orbit.innerHTML = '';
   const items = (list || []).slice(0, 8);
 
-  // VS Code logo at the center
+  // VS Code logo at the center (NO text overlay, just the logo)
   const center = document.createElement('div');
   center.className = 'orbit-center';
   const cImg = document.createElement('img');
@@ -501,13 +501,14 @@ function renderOrbit(list) {
     orbit.appendChild(el);
     return {
       el,
-      // random orbit: radius 62-96, angular speed, random start angle,
-      // slight elliptical squash + tilt so paths differ visually
-      R: rnd(62, 96),
-      speed: rnd(0.028, 0.052) * (Math.random() < 0.5 ? 1 : -1),
+      // 3D depth orbit: radius + vertical ellipse + depth scale. Logos grow
+      // BIG in front (near viewer), shrink small behind the VS Code logo,
+      // and pass visually over/behind it (z-index flips) — depth effect.
+      R: rnd(70, 104),
+      speed: rnd(0.03, 0.055) * (Math.random() < 0.5 ? 1 : -1),
       ang: rnd(0, Math.PI * 2),
-      squash: rnd(0.82, 1),
-      tilt: rnd(0, Math.PI),
+      squash: rnd(0.24, 0.4),   // strongly flattened ellipse = depth view
+      tilt: 0,                  // no random tilt: keep a clean shared plane look
     };
   });
   if (orbitTimer) clearInterval(orbitTimer);
@@ -524,7 +525,7 @@ function renderOrbit(list) {
     const g = document.createElementNS(svgNS, 'linearGradient');
     g.setAttribute('id', 'trail-grad-' + i);
     g.setAttribute('gradientUnits', 'userSpaceOnUse');
-    [['0%', '0'], ['70%', '.45'], ['100%', '1']].forEach(([off, op]) => {
+    [['0%', '0'], ['55%', '.12'], ['85%', '.7'], ['100%', '1']].forEach(([off, op]) => {
       const stop = document.createElementNS(svgNS, 'stop');
       stop.setAttribute('offset', off);
       stop.setAttribute('stop-color', '#00CED1');
@@ -547,6 +548,7 @@ function renderOrbit(list) {
     return { glow, core };
   });
   orbit.insertBefore(svg, orbit.firstChild);
+  nodes.forEach((nd, i) => { nd.arcRef = arcs[i]; nd.grad = gradients[i]; });
 
   // Position on a squashed, tilted ellipse around center (110,110)
   const pos = (nd, a) => {
@@ -562,19 +564,29 @@ function renderOrbit(list) {
       const [x, y] = pos(nd, nd.ang);
       nd.el.style.left = x.toFixed(1) + 'px';
       nd.el.style.top = y.toFixed(1) + 'px';
-      // long tail: sample points backwards along the orbit, fade to 0
-      const STEPS = 14;
+      // depth: sin(ang) > 0 = front (big, on top), < 0 = behind VS Code
+      const depth = Math.sin(nd.ang);            // -1 back … +1 front
+      const scale = 0.72 + (depth + 1) / 2 * 0.6; // 0.72 back → 1.32 front
+      nd.el.style.transform = 'scale(' + scale.toFixed(2) + ')';
+      nd.el.style.zIndex = depth >= 0 ? '3' : '1'; // front: over VS Code (z2), back: under it
+      nd.el.style.opacity = (0.65 + (depth + 1) / 2 * 0.35).toFixed(2);
+      // long curved comet tail along the ellipse, gradient fades the tip out
+      const STEPS = 16;
       const pts = [];
       for (let k = 0; k <= STEPS; k++) {
-        const a = nd.ang - nd.speed * k * 2.2;
+        const a = nd.ang - nd.speed * k * 2.4;
         pts.push(pos(nd, a));
       }
+      // gradient runs tail-tip → logo, opacity grows toward the logo
+      const g = nd.grad;
+      const p0 = pts[STEPS], p1 = pts[0];
+      g.setAttribute('x1', p0[0].toFixed(1)); g.setAttribute('y1', p0[1].toFixed(1));
+      g.setAttribute('x2', p1[0].toFixed(1)); g.setAttribute('y2', p1[1].toFixed(1));
       const d = 'M ' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ');
       nd.arcRef.glow.setAttribute('d', d);
       nd.arcRef.core.setAttribute('d', d);
     });
   };
-  nodes.forEach((nd, i) => { nd.arcRef = arcs[i]; });
   layout();
   orbitTimer = setInterval(() => {
     nodes.forEach((nd) => { nd.ang += nd.speed; });
