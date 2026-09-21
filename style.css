@@ -305,7 +305,7 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 .toast.hidden { display: none; }
 .empty-note { color: var(--muted); font-size: 13px; }
 /* ---------- Rotating code-icon orbit (Skills tab, afkar-style) ---------- */
-.orbit-wrap { position: relative; width: 220px; height: 220px; margin: 6px auto 18px; }
+.orbit-wrap { position: relative; width: 260px; height: 260px; margin: 6px auto 18px; }
 .orbit { position: absolute; inset: 0; }
 .orbit-center {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);

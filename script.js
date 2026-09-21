@@ -456,10 +456,11 @@ function skillLogo(sk) {
   return SKILL_LOGOS[key] || '';
 }
 
-// Rotating logo orbit: real language logos fly around a VS Code logo at the
-// center, each on its OWN random orbit (random radius, speed, tilt) — like
-// planets, not a single carousel ring. Each logo has one long curved comet
-// trail along its own orbit whose tail fades out to invisible.
+// Free-flight logo field: logos fly in RANDOM, continuously-changing
+// directions (crisscross diagonals, curves, sudden turns) around the VS Code
+// logo — like fireflies. Depth effect kept: lower on screen = closer =
+// bigger + in front of VS Code; higher = smaller, behind it. Each logo
+// leaves one long curved trail following its real path, fading to nothing.
 let orbitTimer = null;
 function renderOrbit(list) {
   const orbit = document.getElementById('orbit');
@@ -478,7 +479,6 @@ function renderOrbit(list) {
   center.title = 'Visual Studio Code';
   orbit.appendChild(center);
 
-  // Each skill gets its own randomized orbit parameters
   const rnd = (min, max) => min + Math.random() * (max - min);
   const nodes = items.map((sk) => {
     const el = document.createElement('div');
@@ -501,31 +501,27 @@ function renderOrbit(list) {
     orbit.appendChild(el);
     return {
       el,
-      // 3D depth orbit: radius + vertical ellipse + depth scale. Logos grow
-      // BIG in front (near viewer), shrink small behind the VS Code logo,
-      // and pass visually over/behind it (z-index flips) — depth effect.
-      R: rnd(70, 104),
-      speed: rnd(0.03, 0.055) * (Math.random() < 0.5 ? 1 : -1),
-      ang: rnd(0, Math.PI * 2),
-      squash: rnd(0.24, 0.4),   // strongly flattened ellipse = depth view
-      tilt: 0,                  // no random tilt: keep a clean shared plane look
+      x: 130 + rnd(-80, 80),
+      y: 130 + rnd(-55, 55),
+      dir: rnd(0, Math.PI * 2),          // current heading (any direction)
+      speed: rnd(0.9, 1.9),              // px per frame — diagonal crisscross
+      hist: [],                          // real path history for the trail
     };
   });
   if (orbitTimer) clearInterval(orbitTimer);
 
-  // Long curved comet trail per logo: SVG arc along its own (squashed,
-  // tilted) orbit. Two strokes: soft glow + bright core with fading tail
-  // done via linearGradient (opaque at the logo, transparent at the tip).
+  // Trail: SVG polyline of the last N real positions, gradient opacity
+  // 0 at the tip → 1 near the logo (smoothly fading out, never a hard cut).
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('viewBox', '0 0 220 220');
+  svg.setAttribute('viewBox', '0 0 260 260');
   svg.classList.add('orbit-svg');
   const defs = document.createElementNS(svgNS, 'defs');
   const gradients = nodes.map((_, i) => {
     const g = document.createElementNS(svgNS, 'linearGradient');
     g.setAttribute('id', 'trail-grad-' + i);
     g.setAttribute('gradientUnits', 'userSpaceOnUse');
-    [['0%', '0'], ['55%', '.12'], ['85%', '.7'], ['100%', '1']].forEach(([off, op]) => {
+    [['0%', '0'], ['45%', '.1'], ['75%', '.45'], ['100%', '1']].forEach(([off, op]) => {
       const stop = document.createElementNS(svgNS, 'stop');
       stop.setAttribute('offset', off);
       stop.setAttribute('stop-color', '#00CED1');
@@ -550,48 +546,55 @@ function renderOrbit(list) {
   orbit.insertBefore(svg, orbit.firstChild);
   nodes.forEach((nd, i) => { nd.arcRef = arcs[i]; nd.grad = gradients[i]; });
 
-  // Position on a squashed, tilted ellipse around center (110,110)
-  const pos = (nd, a) => {
-    const ex = Math.cos(a) * nd.R;
-    const ey = Math.sin(a) * nd.R * nd.squash;
-    return [
-      110 + ex * Math.cos(nd.tilt) - ey * Math.sin(nd.tilt),
-      110 + ex * Math.sin(nd.tilt) + ey * Math.cos(nd.tilt),
-    ];
+  const MAXR = 118;          // wide playfield (wrap is 260×260)
+  const shortest = (from, to) => { // signed smallest angle diff
+    let d = (to - from) % (Math.PI * 2);
+    if (d > Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return d;
   };
-  const layout = () => {
+  const tick = () => {
     nodes.forEach((nd) => {
-      const [x, y] = pos(nd, nd.ang);
-      nd.el.style.left = x.toFixed(1) + 'px';
-      nd.el.style.top = y.toFixed(1) + 'px';
-      // depth: sin(ang) > 0 = front (big, on top), < 0 = behind VS Code
-      const depth = Math.sin(nd.ang);            // -1 back … +1 front
-      const scale = 0.72 + (depth + 1) / 2 * 0.6; // 0.72 back → 1.32 front
-      nd.el.style.transform = 'scale(' + scale.toFixed(2) + ')';
-      nd.el.style.zIndex = depth >= 0 ? '3' : '1'; // front: over VS Code (z2), back: under it
-      nd.el.style.opacity = (0.65 + (depth + 1) / 2 * 0.35).toFixed(2);
-      // long curved comet tail along the ellipse, gradient fades the tip out
-      const STEPS = 16;
-      const pts = [];
-      for (let k = 0; k <= STEPS; k++) {
-        const a = nd.ang - nd.speed * k * 2.4;
-        pts.push(pos(nd, a));
+      // continuously random: gentle wobble + occasional sharp turns
+      if (Math.random() < 0.3) nd.dir += rnd(-0.5, 0.5);
+      else nd.dir += rnd(-0.12, 0.12);
+
+      let nx = nd.x + Math.cos(nd.dir) * nd.speed;
+      let ny = nd.y + Math.sin(nd.dir) * nd.speed;
+      // soft containment: if drifting outside, steer back toward center
+      const dist = Math.hypot(nx - 130, ny - 130);
+      if (dist > MAXR) {
+        const inward = Math.atan2(130 - ny, 130 - nx);
+        nd.dir += shortest(nd.dir, inward) * 0.6;
+        nx = nd.x + Math.cos(nd.dir) * nd.speed;
+        ny = nd.y + Math.sin(nd.dir) * nd.speed;
       }
-      // gradient runs tail-tip → logo, opacity grows toward the logo
-      const g = nd.grad;
-      const p0 = pts[STEPS], p1 = pts[0];
-      g.setAttribute('x1', p0[0].toFixed(1)); g.setAttribute('y1', p0[1].toFixed(1));
-      g.setAttribute('x2', p1[0].toFixed(1)); g.setAttribute('y2', p1[1].toFixed(1));
-      const d = 'M ' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ');
-      nd.arcRef.glow.setAttribute('d', d);
-      nd.arcRef.core.setAttribute('d', d);
+      nd.x = nx; nd.y = ny;
+      nd.hist.push([nd.x, nd.y]);
+      if (nd.hist.length > 26) nd.hist.shift();
+
+      // depth: lower on screen = closer = bigger + in front of VS Code
+      const depth = (nd.y - 130) / 118;              // -1 top … +1 bottom
+      const scale = 0.75 + (depth + 1) / 2 * 0.65;  // 0.75 back → 1.4 front
+      nd.el.style.transform = 'scale(' + scale.toFixed(2) + ')';
+      nd.el.style.zIndex = depth >= 0 ? '3' : '1';  // passes in front / behind VS Code (z2)
+      nd.el.style.opacity = (0.6 + (depth + 1) / 2 * 0.4).toFixed(2);
+
+      // trail follows the real (curved, random) path, tip fades to 0
+      if (nd.hist.length > 2) {
+        const pts = nd.hist.slice().reverse();      // tip first, head last
+        const g = nd.grad;
+        g.setAttribute('x1', pts[0][0].toFixed(1)); g.setAttribute('y1', pts[0][1].toFixed(1));
+        g.setAttribute('x2', pts[pts.length - 1][0].toFixed(1));
+        g.setAttribute('y2', pts[pts.length - 1][1].toFixed(1));
+        const d = 'M ' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ');
+        nd.arcRef.glow.setAttribute('d', d);
+        nd.arcRef.core.setAttribute('d', d);
+      }
     });
   };
-  layout();
-  orbitTimer = setInterval(() => {
-    nodes.forEach((nd) => { nd.ang += nd.speed; });
-    layout();
-  }, 30);
+  tick();
+  orbitTimer = setInterval(tick, 30);
 }
 
 function renderSkills(list) {
