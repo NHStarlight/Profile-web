@@ -309,11 +309,12 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 .orbit { position: absolute; inset: 0; }
 .orbit-center {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  font-size: 12px; letter-spacing: 3px; color: var(--accent);
   border: 1px solid rgba(0,206,209,.4); border-radius: 50%;
   width: 74px; height: 74px; display: flex; align-items: center; justify-content: center;
   background: rgba(0,206,209,.06); z-index: 2;
+  box-shadow: 0 0 18px rgba(0,206,209,.25);
 }
+.orbit-center img { width: 40px; height: 40px; object-fit: contain; }
 .orbit-item {
   position: absolute; top: 50%; left: 50%;
   width: 46px; height: 46px; border-radius: 12px; margin: -23px 0 0 -23px;

@@ -456,18 +456,30 @@ function skillLogo(sk) {
   return SKILL_LOGOS[key] || '';
 }
 
-// Rotating logo orbit (afkar-style): real language logos revolve around the
-// center. Each logo has an animated comet-trail that stretches out, then
-// shrinks thinner and fades away. Logos stay upright; text fallback if the
-// icon fails to load.
-let orbitAngle = 0;
+// Rotating logo orbit: real language logos fly around a VS Code logo at the
+// center, each on its OWN random orbit (random radius, speed, tilt) — like
+// planets, not a single carousel ring. Each logo has one long curved comet
+// trail along its own orbit whose tail fades out to invisible.
 let orbitTimer = null;
 function renderOrbit(list) {
   const orbit = document.getElementById('orbit');
   if (!orbit) return;
   orbit.innerHTML = '';
   const items = (list || []).slice(0, 8);
-  const R = 82;
+
+  // VS Code logo at the center
+  const center = document.createElement('div');
+  center.className = 'orbit-center';
+  const cImg = document.createElement('img');
+  cImg.src = 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vscode/vscode-original.svg';
+  cImg.alt = 'VS Code';
+  cImg.draggable = false;
+  center.appendChild(cImg);
+  center.title = 'Visual Studio Code';
+  orbit.appendChild(center);
+
+  // Each skill gets its own randomized orbit parameters
+  const rnd = (min, max) => min + Math.random() * (max - min);
   const nodes = items.map((sk) => {
     const el = document.createElement('div');
     el.className = 'orbit-item';
@@ -487,50 +499,85 @@ function renderOrbit(list) {
     }
     el.title = sk.name || '';
     orbit.appendChild(el);
-    return el;
+    return {
+      el,
+      // random orbit: radius 62-96, angular speed, random start angle,
+      // slight elliptical squash + tilt so paths differ visually
+      R: rnd(62, 96),
+      speed: rnd(0.028, 0.052) * (Math.random() < 0.5 ? 1 : -1),
+      ang: rnd(0, Math.PI * 2),
+      squash: rnd(0.82, 1),
+      tilt: rnd(0, Math.PI),
+    };
   });
   if (orbitTimer) clearInterval(orbitTimer);
 
-  // Single curved trail: an SVG arc drawn along the actual orbit circle,
-  // ending at each logo. Glow layer (blurred, wide) + bright core line.
+  // Long curved comet trail per logo: SVG arc along its own (squashed,
+  // tilted) orbit. Two strokes: soft glow + bright core with fading tail
+  // done via linearGradient (opaque at the logo, transparent at the tip).
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS, 'svg');
   svg.setAttribute('viewBox', '0 0 220 220');
   svg.classList.add('orbit-svg');
-  const arcs = nodes.map(() => {
+  const defs = document.createElementNS(svgNS, 'defs');
+  const gradients = nodes.map((_, i) => {
+    const g = document.createElementNS(svgNS, 'linearGradient');
+    g.setAttribute('id', 'trail-grad-' + i);
+    g.setAttribute('gradientUnits', 'userSpaceOnUse');
+    [['0%', '0'], ['70%', '.45'], ['100%', '1']].forEach(([off, op]) => {
+      const stop = document.createElementNS(svgNS, 'stop');
+      stop.setAttribute('offset', off);
+      stop.setAttribute('stop-color', '#00CED1');
+      stop.setAttribute('stop-opacity', op);
+      g.appendChild(stop);
+    });
+    defs.appendChild(g);
+    return g;
+  });
+  svg.appendChild(defs);
+  const arcs = nodes.map((_, i) => {
     const glow = document.createElementNS(svgNS, 'path');
     glow.classList.add('orbit-arc-glow');
+    glow.setAttribute('stroke', 'url(#trail-grad-' + i + ')');
     const core = document.createElementNS(svgNS, 'path');
     core.classList.add('orbit-arc');
+    core.setAttribute('stroke', 'url(#trail-grad-' + i + ')');
     svg.appendChild(glow);
     svg.appendChild(core);
     return { glow, core };
   });
   orbit.insertBefore(svg, orbit.firstChild);
 
-  const CX = 110, CY = 110, SWEEP = 0.55;
-  const pt = (a) => [CX + Math.cos(a) * R, CY + Math.sin(a) * R];
+  // Position on a squashed, tilted ellipse around center (110,110)
+  const pos = (nd, a) => {
+    const ex = Math.cos(a) * nd.R;
+    const ey = Math.sin(a) * nd.R * nd.squash;
+    return [
+      110 + ex * Math.cos(nd.tilt) - ey * Math.sin(nd.tilt),
+      110 + ex * Math.sin(nd.tilt) + ey * Math.cos(nd.tilt),
+    ];
+  };
   const layout = () => {
-    const n = Math.max(nodes.length, 1);
-    nodes.forEach((el, i) => {
-      const ang = orbitAngle + (i / n) * Math.PI * 2 - Math.PI / 2;
-      const x = Math.cos(ang) * R;
-      const y = Math.sin(ang) * R;
-      el.style.left = 'calc(50% + ' + x.toFixed(1) + 'px)';
-      el.style.top = 'calc(50% + ' + y.toFixed(1) + 'px)';
-      // curved trail: real arc along the orbit, tail behind the logo
-      const s = pt(ang - SWEEP);
-      const e = pt(ang);
-      const d = 'M ' + s[0].toFixed(1) + ' ' + s[1].toFixed(1) +
-        ' A ' + R + ' ' + R + ' 0 0 1 ' + e[0].toFixed(1) + ' ' + e[1].toFixed(1);
-      arcs[i].glow.setAttribute('d', d);
-      arcs[i].core.setAttribute('d', d);
+    nodes.forEach((nd) => {
+      const [x, y] = pos(nd, nd.ang);
+      nd.el.style.left = x.toFixed(1) + 'px';
+      nd.el.style.top = y.toFixed(1) + 'px';
+      // long tail: sample points backwards along the orbit, fade to 0
+      const STEPS = 14;
+      const pts = [];
+      for (let k = 0; k <= STEPS; k++) {
+        const a = nd.ang - nd.speed * k * 2.2;
+        pts.push(pos(nd, a));
+      }
+      const d = 'M ' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ');
+      nd.arcRef.glow.setAttribute('d', d);
+      nd.arcRef.core.setAttribute('d', d);
     });
   };
+  nodes.forEach((nd, i) => { nd.arcRef = arcs[i]; });
   layout();
-  // Double speed: 30ms/frame
   orbitTimer = setInterval(() => {
-    orbitAngle += Math.PI / 60;
+    nodes.forEach((nd) => { nd.ang += nd.speed; });
     layout();
   }, 30);
 }
