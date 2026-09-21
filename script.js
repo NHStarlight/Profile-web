@@ -482,13 +482,6 @@ function renderOrbit(list) {
         el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
       };
       el.appendChild(img);
-      // 3 trail segments per logo: stretch → shrink → vanish (looping)
-      for (let k = 0; k < 3; k++) {
-        const trail = document.createElement('div');
-        trail.className = 'orbit-trail';
-        trail.style.setProperty('--seg', k);
-        el.appendChild(trail);
-      }
     } else {
       el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
     }
@@ -497,6 +490,26 @@ function renderOrbit(list) {
     return el;
   });
   if (orbitTimer) clearInterval(orbitTimer);
+
+  // Single curved trail: an SVG arc drawn along the actual orbit circle,
+  // ending at each logo. Glow layer (blurred, wide) + bright core line.
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 220 220');
+  svg.classList.add('orbit-svg');
+  const arcs = nodes.map(() => {
+    const glow = document.createElementNS(svgNS, 'path');
+    glow.classList.add('orbit-arc-glow');
+    const core = document.createElementNS(svgNS, 'path');
+    core.classList.add('orbit-arc');
+    svg.appendChild(glow);
+    svg.appendChild(core);
+    return { glow, core };
+  });
+  orbit.insertBefore(svg, orbit.firstChild);
+
+  const CX = 110, CY = 110, SWEEP = 0.55;
+  const pt = (a) => [CX + Math.cos(a) * R, CY + Math.sin(a) * R];
   const layout = () => {
     const n = Math.max(nodes.length, 1);
     nodes.forEach((el, i) => {
@@ -505,12 +518,17 @@ function renderOrbit(list) {
       const y = Math.sin(ang) * R;
       el.style.left = 'calc(50% + ' + x.toFixed(1) + 'px)';
       el.style.top = 'calc(50% + ' + y.toFixed(1) + 'px)';
-      // trail sweeps opposite to motion direction
-      el.style.setProperty('--trail-rot', (-(ang + Math.PI / 2) * 180 / Math.PI).toFixed(1) + 'deg');
+      // curved trail: real arc along the orbit, tail behind the logo
+      const s = pt(ang - SWEEP);
+      const e = pt(ang);
+      const d = 'M ' + s[0].toFixed(1) + ' ' + s[1].toFixed(1) +
+        ' A ' + R + ' ' + R + ' 0 0 1 ' + e[0].toFixed(1) + ' ' + e[1].toFixed(1);
+      arcs[i].glow.setAttribute('d', d);
+      arcs[i].core.setAttribute('d', d);
     });
   };
   layout();
-  // Double speed: 30ms/frame (was 60ms effective)
+  // Double speed: 30ms/frame
   orbitTimer = setInterval(() => {
     orbitAngle += Math.PI / 60;
     layout();
