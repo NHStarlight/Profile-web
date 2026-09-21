@@ -315,16 +315,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  // Share + QR buttons
+  // Single Share button: opens modal with QR + copy (zaminhh-style)
   const shareBtn = document.getElementById('share-btn');
-  if (shareBtn) shareBtn.addEventListener('click', (e) => { e.stopPropagation(); shareProfile(); });
-  const qrBtn = document.getElementById('qr-btn');
-  if (qrBtn) qrBtn.addEventListener('click', (e) => { e.stopPropagation(); openQr(); });
+  if (shareBtn) shareBtn.addEventListener('click', (e) => { e.stopPropagation(); openQr(); });
   const qrClose = document.getElementById('qr-close');
   if (qrClose) qrClose.addEventListener('click', (e) => { e.stopPropagation(); closeQr(); });
   const qrCopy = document.getElementById('qr-copy');
-  if (qrCopy) qrCopy.addEventListener('click', (e) => { e.stopPropagation(); shareProfile(); });
-  const qrModal = document.getElementById('qr-modal');
+  if (qrCopy) qrCopy.addEventListener('click', (e) => { e.stopPropagation(); copyLink(); });
+  const qrModal = document.getElementById('share-modal');
   if (qrModal) qrModal.addEventListener('click', (e) => { if (e.target === qrModal) closeQr(); });
 });
 
@@ -335,7 +333,7 @@ function switchTab(name) {
 }
 
 function openQr() {
-  const modal = document.getElementById('qr-modal');
+  const modal = document.getElementById('share-modal');
   const img = document.getElementById('qr-img');
   if (!modal || !img) return;
   img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(location.href);
@@ -343,11 +341,11 @@ function openQr() {
 }
 
 function closeQr() {
-  const modal = document.getElementById('qr-modal');
+  const modal = document.getElementById('share-modal');
   if (modal) modal.classList.add('hidden');
 }
 
-function shareProfile() {
+function copyLink() {
   const toast = document.getElementById('toast');
   const done = () => { if (toast) { toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 1600); } };
   try {
@@ -416,27 +414,42 @@ setInterval(() => {
   } catch { el.textContent = el.dataset.loc; }
 }, 1000);
 
-// Rotating code-icon orbit: icons revolve around the center while each
-// icon counter-rotates to stay upright (afkar-style effect, vanilla CSS).
+// Rotating code-icon orbit: JS-driven rotation (afkar-style).
+// The container angle advances every frame; each icon is placed on the
+// circle and counter-rotated so its label stays upright and readable.
+let orbitAngle = 0;
+let orbitTimer = null;
 function renderOrbit(list) {
   const orbit = document.getElementById('orbit');
   if (!orbit) return;
   orbit.innerHTML = '';
   const items = (list || []).slice(0, 8);
-  const n = Math.max(items.length, 1);
-  const R = 78;
-  items.forEach((sk, i) => {
+  const R = 82;
+  const nodes = items.map((sk) => {
     const el = document.createElement('div');
     el.className = 'orbit-item';
     const short = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
     el.textContent = short;
     el.title = sk.name || '';
-    const ang = (i / n) * Math.PI * 2 - Math.PI / 2;
-    const x = Math.cos(ang) * R;
-    const y = Math.sin(ang) * R;
-    el.style.transform = 'translate(calc(-50% + ' + x.toFixed(1) + 'px), calc(-50% + ' + y.toFixed(1) + 'px))';
     orbit.appendChild(el);
+    return el;
   });
+  if (orbitTimer) clearInterval(orbitTimer);
+  const layout = () => {
+    const n = Math.max(nodes.length, 1);
+    nodes.forEach((el, i) => {
+      const ang = orbitAngle + (i / n) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.cos(ang) * R;
+      const y = Math.sin(ang) * R;
+      el.style.left = 'calc(50% + ' + x.toFixed(1) + 'px)';
+      el.style.top = 'calc(50% + ' + y.toFixed(1) + 'px)';
+    });
+  };
+  layout();
+  orbitTimer = setInterval(() => {
+    orbitAngle += Math.PI / 120;
+    layout();
+  }, 50);
 }
 
 function renderSkills(list) {
