@@ -415,8 +415,9 @@ setInterval(() => {
 }, 1000);
 
 // Rotating logo orbit (afkar-style): real language logos revolve around the
-// center, each with a glowing trail tail + counter-rotation so logos stay
-// upright. Falls back to short text labels if a logo fails to load.
+// center. Each logo has an animated comet-trail that stretches out, then
+// shrinks thinner and fades away. Logos stay upright; text fallback if the
+// icon fails to load.
 let orbitAngle = 0;
 let orbitTimer = null;
 function renderOrbit(list) {
@@ -438,9 +439,13 @@ function renderOrbit(list) {
         el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
       };
       el.appendChild(img);
-      const trail = document.createElement('div');
-      trail.className = 'orbit-trail';
-      el.appendChild(trail);
+      // 3 trail segments per logo: stretch → shrink → vanish (looping)
+      for (let k = 0; k < 3; k++) {
+        const trail = document.createElement('div');
+        trail.className = 'orbit-trail';
+        trail.style.setProperty('--seg', k);
+        el.appendChild(trail);
+      }
     } else {
       el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
     }
@@ -457,16 +462,16 @@ function renderOrbit(list) {
       const y = Math.sin(ang) * R;
       el.style.left = 'calc(50% + ' + x.toFixed(1) + 'px)';
       el.style.top = 'calc(50% + ' + y.toFixed(1) + 'px)';
-      // trail points opposite to motion direction
+      // trail sweeps opposite to motion direction
       el.style.setProperty('--trail-rot', (-(ang + Math.PI / 2) * 180 / Math.PI).toFixed(1) + 'deg');
-      el.style.setProperty('--trail-op', '1');
     });
   };
   layout();
+  // Double speed: 30ms/frame (was 60ms effective)
   orbitTimer = setInterval(() => {
-    orbitAngle += Math.PI / 120;
+    orbitAngle += Math.PI / 60;
     layout();
-  }, 50);
+  }, 30);
 }
 
 function renderSkills(list) {

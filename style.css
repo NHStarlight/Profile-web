@@ -324,16 +324,26 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 }
 .orbit-item img { width: 28px; height: 28px; object-fit: contain; }
 .orbit-item:hover { box-shadow: 0 0 22px rgba(0,206,209,.6); transform: scale(1.12); transition: transform .15s ease, box-shadow .15s ease; }
-/* glowing trail behind each moving logo */
+/* glowing comet-trail behind each moving logo:
+   3 segments animate on a loop — stretch out, shrink thinner, fade away */
 .orbit-trail {
   position: absolute; left: 50%; top: 50%;
-  width: 55px; height: 3px; border-radius: 3px;
-  background: linear-gradient(90deg, rgba(0,206,209,.75), rgba(0,206,209,0));
-  transform: rotate(var(--trail-rot, 0deg)) translateX(-42px);
+  height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg, rgba(0,206,209,.8), rgba(0,206,209,0));
   transform-origin: right center;
-  opacity: var(--trail-op, 0);
+  transform: rotate(var(--trail-rot, 0deg)) translateX(23px);
   pointer-events: none;
   filter: blur(0.5px);
+  animation: trail-life 1.05s linear infinite;
+}
+.orbit-trail:nth-child(2) { animation-delay: 0s; }
+.orbit-trail:nth-child(3) { animation-delay: .35s; }
+.orbit-trail:nth-child(4) { animation-delay: .7s; }
+@keyframes trail-life {
+  0%   { width: 0px;   opacity: 0; }
+  25%  { width: 64px;  opacity: .9; }   /* stretches out */
+  60%  { width: 40px;  opacity: .5; height: 2px; }  /* shrinks thinner */
+  100% { width: 10px;  opacity: 0;  height: 1px; }  /* fades away */
 }
 /* ---------- QR share modal (zaminhh-style) ---------- */
 .qr-modal {
