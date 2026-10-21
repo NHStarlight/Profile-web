@@ -456,17 +456,14 @@ function skillLogo(sk) {
   return SKILL_LOGOS[key] || '';
 }
 
-// Free-flight logo field: logos fly in RANDOM, continuously-changing
-// directions (crisscross diagonals, curves, sudden turns) around the VS Code
-// logo — like fireflies. Depth effect kept: lower on screen = closer =
-// bigger + in front of VS Code; higher = smaller, behind it. Each logo
-// leaves one long curved trail following its real path, fading to nothing.
+// Circular Orbit: logos rotate around VS Code center, staying upright.
 let orbitTimer = null;
 function renderOrbit(list) {
   const orbit = document.getElementById('orbit');
   if (!orbit) return;
+  if (orbitTimer) { clearInterval(orbitTimer); orbitTimer = null; }
   orbit.innerHTML = '';
-  const items = (list || []).slice(0, 8);
+  const items = (list || []).slice(0, 4);
 
   // VS Code logo at the center (NO text overlay, just the logo)
   const center = document.createElement('div');
@@ -479,10 +476,20 @@ function renderOrbit(list) {
   center.title = 'Visual Studio Code';
   orbit.appendChild(center);
 
-  const rnd = (min, max) => min + Math.random() * (max - min);
-  const nodes = items.map((sk) => {
+  
+  // Subtle orbit ring guide
+  const ring = document.createElement('div');
+  ring.className = 'orbit-ring';
+  orbit.appendChild(ring);
+
+  items.forEach((sk, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'orbit-item-wrapper';
+    wrapper.style.animationDelay = `-${i * 5}s`;
+
     const el = document.createElement('div');
     el.className = 'orbit-item';
+
     const logo = skillLogo(sk);
     if (logo) {
       const img = document.createElement('img');
@@ -498,103 +505,10 @@ function renderOrbit(list) {
       el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
     }
     el.title = sk.name || '';
-    orbit.appendChild(el);
-    return {
-      el,
-      x: 130 + rnd(-80, 80),
-      y: 130 + rnd(-55, 55),
-      dir: rnd(0, Math.PI * 2),          // current heading (any direction)
-      speed: rnd(0.9, 1.9),              // px per frame — diagonal crisscross
-      hist: [],                          // real path history for the trail
-    };
+
+    wrapper.appendChild(el);
+    orbit.appendChild(wrapper);
   });
-  if (orbitTimer) clearInterval(orbitTimer);
-
-  // Trail: SVG polyline of the last N real positions, gradient opacity
-  // 0 at the tip → 1 near the logo (smoothly fading out, never a hard cut).
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('viewBox', '0 0 260 260');
-  svg.classList.add('orbit-svg');
-  const defs = document.createElementNS(svgNS, 'defs');
-  const gradients = nodes.map((_, i) => {
-    const g = document.createElementNS(svgNS, 'linearGradient');
-    g.setAttribute('id', 'trail-grad-' + i);
-    g.setAttribute('gradientUnits', 'userSpaceOnUse');
-    [['0%', '0'], ['45%', '.1'], ['75%', '.45'], ['100%', '1']].forEach(([off, op]) => {
-      const stop = document.createElementNS(svgNS, 'stop');
-      stop.setAttribute('offset', off);
-      stop.setAttribute('stop-color', '#00CED1');
-      stop.setAttribute('stop-opacity', op);
-      g.appendChild(stop);
-    });
-    defs.appendChild(g);
-    return g;
-  });
-  svg.appendChild(defs);
-  const arcs = nodes.map((_, i) => {
-    const glow = document.createElementNS(svgNS, 'path');
-    glow.classList.add('orbit-arc-glow');
-    glow.setAttribute('stroke', 'url(#trail-grad-' + i + ')');
-    const core = document.createElementNS(svgNS, 'path');
-    core.classList.add('orbit-arc');
-    core.setAttribute('stroke', 'url(#trail-grad-' + i + ')');
-    svg.appendChild(glow);
-    svg.appendChild(core);
-    return { glow, core };
-  });
-  orbit.insertBefore(svg, orbit.firstChild);
-  nodes.forEach((nd, i) => { nd.arcRef = arcs[i]; nd.grad = gradients[i]; });
-
-  const MAXR = 118;          // wide playfield (wrap is 260×260)
-  const shortest = (from, to) => { // signed smallest angle diff
-    let d = (to - from) % (Math.PI * 2);
-    if (d > Math.PI) d -= Math.PI * 2;
-    if (d < -Math.PI) d += Math.PI * 2;
-    return d;
-  };
-  const tick = () => {
-    nodes.forEach((nd) => {
-      // continuously random: gentle wobble + occasional sharp turns
-      if (Math.random() < 0.3) nd.dir += rnd(-0.5, 0.5);
-      else nd.dir += rnd(-0.12, 0.12);
-
-      let nx = nd.x + Math.cos(nd.dir) * nd.speed;
-      let ny = nd.y + Math.sin(nd.dir) * nd.speed;
-      // soft containment: if drifting outside, steer back toward center
-      const dist = Math.hypot(nx - 130, ny - 130);
-      if (dist > MAXR) {
-        const inward = Math.atan2(130 - ny, 130 - nx);
-        nd.dir += shortest(nd.dir, inward) * 0.6;
-        nx = nd.x + Math.cos(nd.dir) * nd.speed;
-        ny = nd.y + Math.sin(nd.dir) * nd.speed;
-      }
-      nd.x = nx; nd.y = ny;
-      nd.hist.push([nd.x, nd.y]);
-      if (nd.hist.length > 26) nd.hist.shift();
-
-      // depth: lower on screen = closer = bigger + in front of VS Code
-      const depth = (nd.y - 130) / 118;              // -1 top … +1 bottom
-      const scale = 0.75 + (depth + 1) / 2 * 0.65;  // 0.75 back → 1.4 front
-      nd.el.style.transform = 'scale(' + scale.toFixed(2) + ')';
-      nd.el.style.zIndex = depth >= 0 ? '3' : '1';  // passes in front / behind VS Code (z2)
-      nd.el.style.opacity = (0.6 + (depth + 1) / 2 * 0.4).toFixed(2);
-
-      // trail follows the real (curved, random) path, tip fades to 0
-      if (nd.hist.length > 2) {
-        const pts = nd.hist.slice().reverse();      // tip first, head last
-        const g = nd.grad;
-        g.setAttribute('x1', pts[0][0].toFixed(1)); g.setAttribute('y1', pts[0][1].toFixed(1));
-        g.setAttribute('x2', pts[pts.length - 1][0].toFixed(1));
-        g.setAttribute('y2', pts[pts.length - 1][1].toFixed(1));
-        const d = 'M ' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ');
-        nd.arcRef.glow.setAttribute('d', d);
-        nd.arcRef.core.setAttribute('d', d);
-      }
-    });
-  };
-  tick();
-  orbitTimer = setInterval(tick, 30);
 }
 
 function renderSkills(list) {
@@ -602,35 +516,7 @@ function renderSkills(list) {
   if (!box) return;
   box.innerHTML = '';
   renderOrbit(list);
-  (list || []).forEach((sk) => {
-    const pct = Math.max(0, Math.min(100, Number(sk.percent) || 0));
-    const wrap = document.createElement('div');
-    wrap.className = 'skill';
-    const top = document.createElement('div');
-    top.className = 'skill-top';
-    const left = document.createElement('span');
-    left.className = 'skill-left';
-    const rowLogo = skillLogo(sk);
-    if (rowLogo) {
-      const ic = document.createElement('img');
-      ic.src = rowLogo; ic.alt = sk.name || ''; ic.className = 'skill-icon';
-      ic.onerror = () => ic.remove();
-      left.appendChild(ic);
-    }
-    left.appendChild(document.createTextNode(sk.name));
-    const right = document.createElement('span');
-    right.textContent = pct + '%';
-    top.appendChild(left);
-    top.appendChild(right);
-    const bar = document.createElement('div');
-    bar.className = 'skill-bar';
-    const fill = document.createElement('i');
-    fill.style.width = pct + '%';
-    bar.appendChild(fill);
-    wrap.appendChild(top);
-    wrap.appendChild(bar);
-    box.appendChild(wrap);
-  });
+  // Progress bars removed entirely — only the circular orbit remains.
 }
 
 function renderProjects(list) {

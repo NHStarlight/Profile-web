@@ -284,12 +284,8 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 #player-seek { flex: 1; accent-color: var(--accent); cursor: pointer; }
 .audio-error { font-size: 12px; color: #f87171; background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.3); border-radius: 8px; padding: 8px 10px; margin-bottom: 14px; }
 .audio-error.hidden { display: none; }
-.skills-list { display: flex; flex-direction: column; gap: 14px; text-align: left; }
-.skill-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 6px; }
-.skill-left { display: flex; align-items: center; gap: 8px; }
-.skill-icon { width: 20px; height: 20px; object-fit: contain; }
-.skill-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
-.skill-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+/* ---------- Progress bars removed ---------- */
+.skills-list { display: none; }
 .projects-list { display: flex; flex-direction: column; gap: 14px; text-align: left; }
 .project-card { background: rgba(255,255,255,.05); border: 1px solid rgba(0,206,209,.25); border-radius: 12px; padding: 14px; }
 .project-head { font-size: 15px; margin-bottom: 6px; }
@@ -304,36 +300,128 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 .toast { margin-top: 10px; font-size: 12px; color: #34d399; }
 .toast.hidden { display: none; }
 .empty-note { color: var(--muted); font-size: 13px; }
-/* ---------- Rotating code-icon orbit (Skills tab, afkar-style) ---------- */
-.orbit-wrap { position: relative; width: 260px; height: 260px; margin: 6px auto 18px; }
+/* ---------- Skills card: Glassmorphism ---------- */
+.skills-card {
+  background: rgba(13, 19, 34, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 206, 209, 0.35);
+  border-radius: 18px;
+  padding: 26px 22px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(0, 206, 209, 0.12),
+    inset 0 0 24px rgba(0, 206, 209, 0.06);
+  position: relative;
+  z-index: 1;
+}
+.skills-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 18px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 206, 209, 0.5), rgba(255, 107, 158, 0.5));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- Circular Orbit (Skills tab) ---------- */
+.orbit-wrap {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  margin: 14px auto 26px;
+  z-index: 2;
+}
 .orbit { position: absolute; inset: 0; }
+
+/* VS Code center icon with glow */
 .orbit-center {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  border: 1px solid rgba(0,206,209,.4); border-radius: 50%;
-  width: 74px; height: 74px; display: flex; align-items: center; justify-content: center;
-  background: rgba(0,206,209,.06); z-index: 2;
-  box-shadow: 0 0 18px rgba(0,206,209,.25);
-}
-.orbit-center img { width: 40px; height: 40px; object-fit: contain; }
-.orbit-item {
-  position: absolute; top: 50%; left: 50%;
-  width: 46px; height: 46px; border-radius: 12px; margin: -23px 0 0 -23px;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 86px; height: 86px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 206, 209, 0.5);
+  background:
+    radial-gradient(circle at 35% 35%, rgba(0, 206, 209, 0.25), transparent 60%),
+    rgba(13, 19, 34, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 3;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: bold; color: var(--text);
-  background: rgba(13,19,34,.95); border: 1px solid rgba(0,206,209,.45);
-  box-shadow: 0 0 14px rgba(0,206,209,.25);
-  will-change: transform, opacity;
+  box-shadow:
+    0 0 40px rgba(0, 206, 209, 0.45),
+    0 0 80px rgba(0, 206, 209, 0.25),
+    inset 0 0 24px rgba(0, 206, 209, 0.2);
 }
-.orbit-item img { width: 28px; height: 28px; object-fit: contain; }
-.orbit-item:hover { box-shadow: 0 0 22px rgba(0,206,209,.6); transform: scale(1.12); transition: transform .15s ease, box-shadow .15s ease; }
-/* curved comet-trail: single arc drawn along the real orbit circle */
-.orbit-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-.orbit-arc-glow {
-  fill: none; stroke: rgba(0, 206, 209, .4); stroke-width: 9; stroke-linecap: round;
-  filter: blur(3px);
+.orbit-center img {
+  width: 50px; height: 50px;
+  filter: drop-shadow(0 0 16px rgba(0, 206, 209, 0.9));
 }
-.orbit-arc {
-  fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round;
+
+/* Orbit item wrapper — handles the circular motion */
+.orbit-item-wrapper {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 48px; height: 48px;
+  margin: -24px 0 0 -24px;
+  animation: orbit-spin 20s linear infinite;
+  z-index: 2;
+}
+
+/* Orbit item — counter-rotates to stay upright */
+.orbit-item {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 48px; height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 14px;
+  background: rgba(13, 19, 34, 0.85);
+  border: 1px solid rgba(0, 206, 209, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 0 28px rgba(0, 206, 209, 0.35),
+    inset 0 0 16px rgba(0, 206, 209, 0.12);
+  display: flex; align-items: center; justify-content: center;
+  animation: counter-rotate 20s linear infinite reverse;
+  will-change: transform;
+}
+.orbit-item img {
+  width: 32px; height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(0, 206, 209, 0.4));
+}
+.orbit-item:hover {
+  box-shadow: 0 0 40px rgba(0, 206, 209, 0.75);
+  transform: scale(1.18);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  z-index: 4;
+}
+
+/* Orbit ring path (subtle guide) */
+.orbit-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 206, 209, 0.18);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Animations */
+@keyframes orbit-spin {
+  from { transform: rotate(0deg) translateX(140px); }
+  to   { transform: rotate(360deg) translateX(140px); }
+}
+@keyframes counter-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
 }
 /* ---------- QR share modal (zaminhh-style) ---------- */
 .qr-modal {
