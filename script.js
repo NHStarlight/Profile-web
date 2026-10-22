@@ -513,6 +513,11 @@ function renderOrbit(list) {
     const el = document.createElement('div');
     el.className = 'orbit-item';
 
+    // The round badge holds ONLY the icon — the label is a sibling below it,
+    // so long skill names can never overflow/overlap the circle.
+    const badge = document.createElement('div');
+    badge.className = 'orbit-badge';
+
     const logo = skillLogo(sk);
     if (logo) {
       const img = document.createElement('img');
@@ -521,12 +526,13 @@ function renderOrbit(list) {
       img.draggable = false;
       img.onerror = () => {
         img.remove();
-        el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
+        badge.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
       };
-      el.appendChild(img);
+      badge.appendChild(img);
     } else {
-      el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
+      badge.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
     }
+    el.appendChild(badge);
 
     const label = document.createElement('div');
     label.className = 'orbit-item-label';

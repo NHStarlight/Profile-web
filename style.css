@@ -161,7 +161,7 @@ body {
 #profile-block.hidden { display: none; }
 
 .profile-container {
-  width: min(480px, 92vw);
+  width: min(520px, 94vw);
   padding: 36px 30px;
   text-align: center;
   background: rgba(10, 14, 26, 0.72);
@@ -314,7 +314,7 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
     inset 0 0 24px rgba(255, 255, 255, 0.03);
   position: relative;
   z-index: 1;
-  max-width: 420px;
+  max-width: 470px;
   margin: 0 auto;
 }
 .skills-card .tab-title {
@@ -327,10 +327,14 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 }
 
 /* ---------- Circular Orbit (Skills tab) ---------- */
+/* The orbit box must be big enough for the WORST-CASE rotation: an item
+   sitting at the bottom of the outer ring needs R + labelHeight below the
+   centre (155 + 43 = 198px), and an item at the side needs R + badgeRadius
+   (155 + 26 = 181px). A 400x400 box gives a 200px half-extent, so both fit. */
 .orbit-wrap {
   position: relative;
-  width: 340px;
-  height: 340px;
+  width: 400px;
+  height: 400px;
   margin: 0 auto 28px;
   z-index: 2;
 }
@@ -347,10 +351,10 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   transform: translate(-50%, -50%);
 }
 .orbit-ring-inner {
-  width: 180px; height: 180px;
+  width: 190px; height: 190px;
 }
 .orbit-ring-outer {
-  width: 280px; height: 280px;
+  width: 310px; height: 310px;
 }
 
 /* VS Code center icon with glow + label */
@@ -403,15 +407,33 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   z-index: 3;
 }
 
-/* Orbit item — stays upright, contains logo + label.
-   It is absolutely centered on the 0x0 anchor via margins (not transform) so
-   the counter-rotation animation owns `transform` exclusively. */
+/* Orbit item — upright container: a round badge (icon) + a label BELOW it.
+   The label is a SIBLING of the badge, not inside it, so long names like
+   "JavaScript" can never overflow the circle (that was the overlap bug).
+   Vertical centring uses margins, not transform, so the counter-rotation
+   animation owns `transform` exclusively. */
 .orbit-item {
   position: absolute;
   left: 0; top: 0;
-  width: 52px; height: 52px;
-  margin-left: -26px;
+  width: 84px;
+  margin-left: -42px;
   margin-top: -26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  /* Counter-rotation must use the SAME duration AND the SAME phase (delay) as
+     the parent wrapper, otherwise the logo stays tilted instead of upright.
+     Direction must be `normal` (NOT `reverse`): with `reverse` the child's
+     progress becomes (1 - p) and the two rotations no longer cancel out. */
+  animation: counter-rotate 20s linear infinite;
+  animation-delay: var(--orbit-delay, 0s);
+  will-change: transform;
+}
+
+/* The round glass badge that holds the icon only */
+.orbit-badge {
+  width: 52px; height: 52px;
   border-radius: 50%;
   background: rgba(13, 19, 34, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -421,22 +443,14 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
     0 0 30px rgba(255, 255, 255, 0.3),
     inset 0 0 20px rgba(255, 255, 255, 0.1);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* Counter-rotation must use the SAME duration AND the SAME phase (delay) as
-     the parent wrapper, otherwise the logo stays tilted instead of upright.
-     Direction must be `normal` (NOT `reverse`): with `reverse` the child's
-     progress becomes (1 - p) and the two rotations no longer cancel out. */
-  animation: counter-rotate 20s linear infinite;
-  animation-delay: var(--orbit-delay, 0s);
-  will-change: transform;
+  flex: 0 0 auto;
 }
 .orbit-item img {
   width: 28px; height: 28px;
   object-fit: contain;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
-  margin-bottom: 5px;
   transition: transform 0.25s ease;
 }
 .orbit-item-label {
@@ -447,10 +461,11 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   text-align: center;
   line-height: 1.1;
   white-space: nowrap;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 1);
 }
 /* Hover scales the icon, not the animated item (an animation on `transform`
    would override a plain `:hover { transform }` rule). */
-.orbit-item:hover {
+.orbit-item:hover .orbit-badge {
   box-shadow: 0 0 45px rgba(255, 255, 255, 0.6);
   z-index: 5;
 }
@@ -460,15 +475,17 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 
 /* Animations — perfectly circular, follows the orbit ring.
    translateX values MUST equal the ring radius:
-     inner ring 180px diameter -> r = 90px
-     outer ring 280px diameter -> r = 140px */
+     inner ring 190px diameter -> r = 95px
+     outer ring 310px diameter -> r = 155px
+   The radial gap between the two rings (155 - 95 = 60px) must stay larger
+   than the badge diameter (52px) so the two rings never touch. */
 @keyframes orbit-spin-outer {
-  from { transform: rotate(0deg) translateX(140px); }
-  to   { transform: rotate(360deg) translateX(140px); }
+  from { transform: rotate(0deg) translateX(155px); }
+  to   { transform: rotate(360deg) translateX(155px); }
 }
 @keyframes orbit-spin-inner {
-  from { transform: rotate(0deg) translateX(90px); }
-  to   { transform: rotate(360deg) translateX(90px); }
+  from { transform: rotate(0deg) translateX(95px); }
+  to   { transform: rotate(360deg) translateX(95px); }
 }
 @keyframes counter-rotate {
   from { transform: rotate(0deg); }
@@ -497,13 +514,19 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   .profile-container { padding: 28px 18px; }
   .avatar-wrap { width: 120px; height: 120px; }
   .profile-name { font-size: 24px; }
-  /* The orbit is a fixed 340px box — on narrow phones it overflows the card.
-     Scale the whole orbit down (transform doesn't affect layout) and pull the
-     surrounding margins back so it stays perfectly centred. */
+  /* The orbit is a fixed 400px box. `transform: scale()` only shrinks the
+     VISUAL, not the layout box, so the box would still force the card wider
+     than the phone. Fix: centre the oversized box with a negative/auto
+     margin (it overflows equally on both sides) and scale the visual down.
+     400 * 0.72 = 288px, which fits a 320px-wide phone minus card padding. */
   .orbit-wrap {
-    transform: scale(0.78);
+    width: 400px;
+    height: 400px;
+    margin-left: calc(50% - 200px);
+    margin-right: 0;
+    margin-bottom: -20px;
+    transform: scale(0.72);
     transform-origin: center center;
-    margin: -34px auto -6px;
   }
-  .skills-card { padding: 24px 16px; }
+  .skills-card { padding: 24px 16px; overflow: hidden; }
 }
