@@ -402,7 +402,10 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   top: 50%; left: 50%;
   width: 0; height: 0;
   transform-origin: center center;
-  animation: orbit-spin-outer 20s linear infinite;
+  animation-name: orbit-spin-outer;
+  animation-duration: var(--orbit-duration, 20s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
   animation-delay: var(--orbit-delay, 0s);
   z-index: 3;
 }
@@ -434,7 +437,10 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
      the parent wrapper, otherwise the logo stays tilted instead of upright.
      Direction must be `normal` (NOT `reverse`): with `reverse` the child's
      progress becomes (1 - p) and the two rotations no longer cancel out. */
-  animation: counter-rotate 20s linear infinite;
+  animation-name: counter-rotate;
+  animation-duration: var(--orbit-duration, 20s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
   animation-delay: var(--orbit-delay, 0s);
   will-change: transform;
 }
@@ -502,11 +508,11 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 
 .orbit-item-wrapper.orbit-outer {
   animation-name: orbit-spin-outer;
-  animation-duration: 20s;
+  animation-duration: var(--orbit-duration, 20s);
 }
 .orbit-item-wrapper.orbit-inner {
   animation-name: orbit-spin-inner;
-  animation-duration: 20s;
+  animation-duration: var(--orbit-duration, 20s);
 }
 /* ---------- QR share modal (zaminhh-style) ---------- */
 .qr-modal {

@@ -501,7 +501,7 @@ function renderOrbit(list) {
     // Even angular spacing: the whole ring completes one revolution in 20s,
     // so each item is offset by 20 / ringTotal seconds. Negative delays make
     // the animation start mid-cycle (no visible "jump in" on page load).
-    const offset = -(ringIndex * (20 / ringTotal)) - (useOuterRing ? 0 : 2);
+    const ringDuration = useOuterRing ? 20 : 18;`n      const offset = -(ringIndex * (ringDuration / ringTotal)) - (useOuterRing ? 0 : 2);
 
     const wrapper = document.createElement('div');
     wrapper.className = 'orbit-item-wrapper ' + (useOuterRing ? 'orbit-outer' : 'orbit-inner');
@@ -509,6 +509,7 @@ function renderOrbit(list) {
     // the child .orbit-item (counter-rotate) share the exact same delay —
     // otherwise the logos stay tilted instead of upright.
     wrapper.style.setProperty('--orbit-delay', offset + 's');
+    wrapper.style.setProperty('--orbit-duration', ringDuration + 's');
 
     const el = document.createElement('div');
     el.className = 'orbit-item';
