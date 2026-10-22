@@ -422,6 +422,14 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  /* The rotation pivot MUST be the centre of the BADGE, not the centre of this
+     box. The badge is 52px tall and sits at the very top of this block, while
+     the box is 84x69 (badge + label below it). With the default 50%/50% origin
+     the pivot sat ~8.5px BELOW the badge centre, so the counter-rotation made
+     every icon trace a tiny circle of radius 8.5px — the badges visibly
+     drifted OFF the dashed orbit ring. The badge centre is 26px from the top
+     of this box and horizontally centred, hence `50% 26px`. */
+  transform-origin: 50% 26px;
   /* Counter-rotation must use the SAME duration AND the SAME phase (delay) as
      the parent wrapper, otherwise the logo stays tilted instead of upright.
      Direction must be `normal` (NOT `reverse`): with `reverse` the child's
