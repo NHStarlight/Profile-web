@@ -347,7 +347,7 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   transform: translate(-50%, -50%);
 }
 .orbit-ring-inner {
-  width: 160px; height: 160px;
+  width: 180px; height: 180px;
 }
 .orbit-ring-outer {
   width: 280px; height: 280px;
@@ -389,25 +389,29 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   letter-spacing: 0.3px;
 }
 
-/* Orbit item wrapper — handles the circular motion */
+/* Orbit item wrapper — handles the circular motion.
+   NOTE: the wrapper is a 0x0 anchor placed at the exact orbit center, so the
+   animation transform can stay PURE (rotate + translateX) without fighting a
+   `translate(-50%,-50%)` centering rule (animations override transforms). */
 .orbit-item-wrapper {
   position: absolute;
   top: 50%; left: 50%;
-  width: 60px; height: 60px;
-  transform: translate(-50%, -50%);
+  width: 0; height: 0;
   transform-origin: center center;
-  animation: orbit-spin 20s linear infinite;
+  animation: orbit-spin-outer 20s linear infinite;
+  animation-delay: var(--orbit-delay, 0s);
   z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
-/* Orbit item — stays upright, contains logo + label */
+/* Orbit item — stays upright, contains logo + label.
+   It is absolutely centered on the 0x0 anchor via margins (not transform) so
+   the counter-rotation animation owns `transform` exclusively. */
 .orbit-item {
-  position: relative;
+  position: absolute;
+  left: 0; top: 0;
   width: 52px; height: 52px;
+  margin-left: -26px;
+  margin-top: -26px;
   border-radius: 50%;
   background: rgba(13, 19, 34, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -420,7 +424,12 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  animation: counter-rotate 20s linear infinite reverse;
+  /* Counter-rotation must use the SAME duration AND the SAME phase (delay) as
+     the parent wrapper, otherwise the logo stays tilted instead of upright.
+     Direction must be `normal` (NOT `reverse`): with `reverse` the child's
+     progress becomes (1 - p) and the two rotations no longer cancel out. */
+  animation: counter-rotate 20s linear infinite;
+  animation-delay: var(--orbit-delay, 0s);
   will-change: transform;
 }
 .orbit-item img {
@@ -428,6 +437,7 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   object-fit: contain;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
   margin-bottom: 5px;
+  transition: transform 0.25s ease;
 }
 .orbit-item-label {
   font-size: 10px;
@@ -438,21 +448,27 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   line-height: 1.1;
   white-space: nowrap;
 }
+/* Hover scales the icon, not the animated item (an animation on `transform`
+   would override a plain `:hover { transform }` rule). */
 .orbit-item:hover {
   box-shadow: 0 0 45px rgba(255, 255, 255, 0.6);
-  transform: scale(1.15);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
   z-index: 5;
 }
+.orbit-item:hover img {
+  transform: scale(1.2);
+}
 
-/* Animations — perfectly circular, follows the orbit ring */
+/* Animations — perfectly circular, follows the orbit ring.
+   translateX values MUST equal the ring radius:
+     inner ring 180px diameter -> r = 90px
+     outer ring 280px diameter -> r = 140px */
 @keyframes orbit-spin-outer {
   from { transform: rotate(0deg) translateX(140px); }
   to   { transform: rotate(360deg) translateX(140px); }
 }
 @keyframes orbit-spin-inner {
-  from { transform: rotate(0deg) translateX(70px); }
-  to   { transform: rotate(360deg) translateX(70px); }
+  from { transform: rotate(0deg) translateX(90px); }
+  to   { transform: rotate(360deg) translateX(90px); }
 }
 @keyframes counter-rotate {
   from { transform: rotate(0deg); }
@@ -481,4 +497,13 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   .profile-container { padding: 28px 18px; }
   .avatar-wrap { width: 120px; height: 120px; }
   .profile-name { font-size: 24px; }
+  /* The orbit is a fixed 340px box — on narrow phones it overflows the card.
+     Scale the whole orbit down (transform doesn't affect layout) and pull the
+     surrounding margins back so it stays perfectly centred. */
+  .orbit-wrap {
+    transform: scale(0.78);
+    transform-origin: center center;
+    margin: -34px auto -6px;
+  }
+  .skills-card { padding: 24px 16px; }
 }

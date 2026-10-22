@@ -490,12 +490,25 @@ function renderOrbit(list) {
   center.title = 'Visual Studio Code';
   orbit.appendChild(center);
 
-  // Distribute items across rings: first 3 on outer ring, rest on inner
+  // Distribute items evenly across the two rings.
+  // With N items: outer gets ceil(N/2), inner gets the rest. Each ring's items
+  // are spaced by an equal angle so they never bunch up on one side.
+  const outerCount = Math.ceil(items.length / 2);
   items.forEach((sk, i) => {
-    const useOuterRing = i < 3;
+    const useOuterRing = i < outerCount;
+    const ringIndex = useOuterRing ? i : i - outerCount;
+    const ringTotal = useOuterRing ? outerCount : items.length - outerCount;
+    // Even angular spacing: the whole ring completes one revolution in 20s,
+    // so each item is offset by 20 / ringTotal seconds. Negative delays make
+    // the animation start mid-cycle (no visible "jump in" on page load).
+    const offset = -(ringIndex * (20 / ringTotal)) - (useOuterRing ? 0 : 2);
+
     const wrapper = document.createElement('div');
     wrapper.className = 'orbit-item-wrapper ' + (useOuterRing ? 'orbit-outer' : 'orbit-inner');
-    wrapper.style.animationDelay = '-' + i * 4 + 's';
+    // Set the phase via a CSS custom property so BOTH the wrapper (orbit) and
+    // the child .orbit-item (counter-rotate) share the exact same delay —
+    // otherwise the logos stay tilted instead of upright.
+    wrapper.style.setProperty('--orbit-delay', offset + 's');
 
     const el = document.createElement('div');
     el.className = 'orbit-item';
@@ -750,6 +763,10 @@ renderBadges(CFG.badges || []);
   (function initVisitorCounter() {
     const el = visitorCount;
     if (!el) return;
+    // Optional baseline from the admin config (visitorBase) so the counter can
+    // start from an existing number and keep counting real visits on top.
+    const base = Number(CFG.visitorBase) || 0;
+    const paint = (n) => { el.textContent = (base + n).toLocaleString(); };
     // Stable id per browser → opening the profile several times counts once.
     let vid = localStorage.getItem('pv_vid');
     if (!vid) {
@@ -762,12 +779,12 @@ renderBadges(CFG.badges || []);
       body: JSON.stringify({ vid }),
     })
       .then((r) => r.json())
-      .then((j) => { if (j && typeof j.count === 'number') el.textContent = j.count.toLocaleString(); })
+      .then((j) => { if (j && typeof j.count === 'number') paint(j.count); })
       .catch(() => {
         // Read-only fallback if the POST fails (still show the real number).
         fetch('/api/visit')
           .then((r) => r.json())
-          .then((j) => { if (j && typeof j.count === 'number') el.textContent = j.count.toLocaleString(); })
+          .then((j) => { if (j && typeof j.count === 'number') paint(j.count); })
           .catch(() => {});
       });
   })();
