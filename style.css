@@ -502,9 +502,11 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 
 .orbit-item-wrapper.orbit-outer {
   animation-name: orbit-spin-outer;
+  animation-duration: 20s;
 }
 .orbit-item-wrapper.orbit-inner {
   animation-name: orbit-spin-inner;
+  animation-duration: 20s;
 }
 /* ---------- QR share modal (zaminhh-style) ---------- */
 .qr-modal {
