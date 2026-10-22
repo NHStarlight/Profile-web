@@ -1,7 +1,7 @@
 /* Starlight profile — single clean style. No themes / orbit / glitch / cursor. */
 :root {
-  --accent: #00CED1;
-  --accent2: #FF6B9E;
+  --accent: #000000;
+  --accent2: #ffffff;
   --bg: #070b16;
   --text: #e8ecf5;
   --muted: #8b93a8;
@@ -305,13 +305,13 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   background: rgba(13, 19, 34, 0.55);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(0, 206, 209, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.6);
   border-radius: 18px;
   padding: 26px 22px;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(0, 206, 209, 0.12),
-    inset 0 0 24px rgba(0, 206, 209, 0.06);
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 0 24px rgba(255, 255, 255, 0.04);
   position: relative;
   z-index: 1;
 }
@@ -321,7 +321,7 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   top: 0; left: 0; right: 0; bottom: 0;
   border-radius: 18px;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(0, 206, 209, 0.5), rgba(255, 107, 158, 0.5));
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.4));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: destination-out;
   mask-composite: exclude;
@@ -336,6 +336,9 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   height: 340px;
   margin: 14px auto 26px;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .orbit { position: absolute; inset: 0; }
 
@@ -346,22 +349,22 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   transform: translate(-50%, -50%);
   width: 86px; height: 86px;
   border-radius: 50%;
-  border: 1px solid rgba(0, 206, 209, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   background:
-    radial-gradient(circle at 35% 35%, rgba(0, 206, 209, 0.25), transparent 60%),
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.2), transparent 60%),
     rgba(13, 19, 34, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 3;
   display: flex; align-items: center; justify-content: center;
   box-shadow:
-    0 0 40px rgba(0, 206, 209, 0.45),
-    0 0 80px rgba(0, 206, 209, 0.25),
-    inset 0 0 24px rgba(0, 206, 209, 0.2);
+    0 0 40px rgba(255, 255, 255, 0.5),
+    0 0 80px rgba(255, 255, 255, 0.25),
+    inset 0 0 24px rgba(255, 255, 255, 0.15);
 }
 .orbit-center img {
   width: 50px; height: 50px;
-  filter: drop-shadow(0 0 16px rgba(0, 206, 209, 0.9));
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.9));
 }
 
 /* Orbit item wrapper — handles the circular motion */
@@ -370,6 +373,7 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   top: 50%; left: 50%;
   width: 48px; height: 48px;
   margin: -24px 0 0 -24px;
+  transform-origin: center center;
   animation: orbit-spin 20s linear infinite;
   z-index: 2;
 }
@@ -382,12 +386,12 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   margin: -24px 0 0 -24px;
   border-radius: 14px;
   background: rgba(13, 19, 34, 0.85);
-  border: 1px solid rgba(0, 206, 209, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow:
-    0 0 28px rgba(0, 206, 209, 0.35),
-    inset 0 0 16px rgba(0, 206, 209, 0.12);
+    0 0 28px rgba(255, 255, 255, 0.35),
+    inset 0 0 16px rgba(255, 255, 255, 0.12);
   display: flex; align-items: center; justify-content: center;
   animation: counter-rotate 20s linear infinite reverse;
   will-change: transform;
@@ -395,10 +399,10 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
 .orbit-item img {
   width: 32px; height: 32px;
   object-fit: contain;
-  filter: drop-shadow(0 0 10px rgba(0, 206, 209, 0.4));
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
 }
 .orbit-item:hover {
-  box-shadow: 0 0 40px rgba(0, 206, 209, 0.75);
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.75);
   transform: scale(1.18);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   z-index: 4;
@@ -409,15 +413,15 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px dashed rgba(0, 206, 209, 0.18);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Animations */
+/* Animations — perfectly circular, no drift */
 @keyframes orbit-spin {
-  from { transform: rotate(0deg) translateX(140px); }
-  to   { transform: rotate(360deg) translateX(140px); }
+  from { transform: rotate(0deg) translateX(130px); }
+  to   { transform: rotate(360deg) translateX(130px); }
 }
 @keyframes counter-rotate {
   from { transform: rotate(0deg); }
