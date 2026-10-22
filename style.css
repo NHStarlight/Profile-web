@@ -305,28 +305,25 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   background: rgba(13, 19, 34, 0.55);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  border-radius: 18px;
-  padding: 26px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 30px 24px;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.15),
-    inset 0 0 24px rgba(255, 255, 255, 0.04);
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 24px rgba(255, 255, 255, 0.03);
   position: relative;
   z-index: 1;
+  max-width: 420px;
+  margin: 0 auto;
 }
-.skills-card::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 18px;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.4));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: destination-out;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 0;
+.skills-card .tab-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
 }
 
 /* ---------- Circular Orbit (Skills tab) ---------- */
@@ -334,98 +331,139 @@ a.social-fallback { color: var(--accent); font-size: 22px; text-decoration: none
   position: relative;
   width: 340px;
   height: 340px;
-  margin: 14px auto 26px;
+  margin: 0 auto 28px;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .orbit { position: absolute; inset: 0; }
 
-/* VS Code center icon with glow */
+/* Multiple concentric orbit rings */
+.orbit-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 0;
+  transform: translate(-50%, -50%);
+}
+.orbit-ring-inner {
+  width: 160px; height: 160px;
+}
+.orbit-ring-outer {
+  width: 280px; height: 280px;
+}
+
+/* VS Code center icon with glow + label */
 .orbit-center {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 86px; height: 86px;
+  width: 96px; height: 96px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   background:
-    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.2), transparent 60%),
-    rgba(13, 19, 34, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 3;
-  display: flex; align-items: center; justify-content: center;
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.15), transparent 60%),
+    rgba(13, 19, 34, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   box-shadow:
-    0 0 40px rgba(255, 255, 255, 0.5),
-    0 0 80px rgba(255, 255, 255, 0.25),
-    inset 0 0 24px rgba(255, 255, 255, 0.15);
+    0 0 40px rgba(255, 255, 255, 0.35),
+    0 0 80px rgba(255, 255, 255, 0.15),
+    inset 0 0 24px rgba(255, 255, 255, 0.1);
 }
 .orbit-center img {
-  width: 50px; height: 50px;
-  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.9));
+  width: 48px; height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.8));
+  margin-bottom: 6px;
+}
+.orbit-center-label {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 /* Orbit item wrapper — handles the circular motion */
 .orbit-item-wrapper {
   position: absolute;
   top: 50%; left: 50%;
-  width: 48px; height: 48px;
-  margin: -24px 0 0 -24px;
+  width: 60px; height: 60px;
+  transform: translate(-50%, -50%);
   transform-origin: center center;
   animation: orbit-spin 20s linear infinite;
-  z-index: 2;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Orbit item — counter-rotates to stay upright */
+/* Orbit item — stays upright, contains logo + label */
 .orbit-item {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 48px; height: 48px;
-  margin: -24px 0 0 -24px;
-  border-radius: 14px;
+  position: relative;
+  width: 52px; height: 52px;
+  border-radius: 50%;
   background: rgba(13, 19, 34, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow:
-    0 0 28px rgba(255, 255, 255, 0.35),
-    inset 0 0 16px rgba(255, 255, 255, 0.12);
-  display: flex; align-items: center; justify-content: center;
+    0 0 30px rgba(255, 255, 255, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   animation: counter-rotate 20s linear infinite reverse;
   will-change: transform;
 }
 .orbit-item img {
-  width: 32px; height: 32px;
+  width: 28px; height: 28px;
   object-fit: contain;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+  margin-bottom: 5px;
+}
+.orbit-item-label {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-align: center;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 .orbit-item:hover {
-  box-shadow: 0 0 40px rgba(255, 255, 255, 0.75);
-  transform: scale(1.18);
+  box-shadow: 0 0 45px rgba(255, 255, 255, 0.6);
+  transform: scale(1.15);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
-  z-index: 4;
+  z-index: 5;
 }
 
-/* Orbit ring path (subtle guide) */
-.orbit-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  pointer-events: none;
-  z-index: 0;
+/* Animations — perfectly circular, follows the orbit ring */
+@keyframes orbit-spin-outer {
+  from { transform: rotate(0deg) translateX(140px); }
+  to   { transform: rotate(360deg) translateX(140px); }
 }
-
-/* Animations — perfectly circular, no drift */
-@keyframes orbit-spin {
-  from { transform: rotate(0deg) translateX(130px); }
-  to   { transform: rotate(360deg) translateX(130px); }
+@keyframes orbit-spin-inner {
+  from { transform: rotate(0deg) translateX(70px); }
+  to   { transform: rotate(360deg) translateX(70px); }
 }
 @keyframes counter-rotate {
   from { transform: rotate(0deg); }
   to   { transform: rotate(-360deg); }
+}
+
+.orbit-item-wrapper.orbit-outer {
+  animation-name: orbit-spin-outer;
+}
+.orbit-item-wrapper.orbit-inner {
+  animation-name: orbit-spin-inner;
 }
 /* ---------- QR share modal (zaminhh-style) ---------- */
 .qr-modal {

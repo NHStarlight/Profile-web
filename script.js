@@ -457,15 +457,25 @@ function skillLogo(sk) {
 }
 
 // Circular Orbit: logos rotate around VS Code center, staying upright.
+// Multiple concentric rings with labels under each item.
+// Multiple concentric rings with labels under each item.
 let orbitTimer = null;
 function renderOrbit(list) {
   const orbit = document.getElementById('orbit');
   if (!orbit) return;
   if (orbitTimer) { clearInterval(orbitTimer); orbitTimer = null; }
   orbit.innerHTML = '';
-  const items = (list || []).slice(0, 4);
+  const items = (list || []).slice(0, 5);
 
-  // VS Code logo at the center (NO text overlay, just the logo)
+  // Two concentric orbit rings
+  const ringInner = document.createElement('div');
+  ringInner.className = 'orbit-ring orbit-ring-inner';
+  orbit.appendChild(ringInner);
+  const ringOuter = document.createElement('div');
+  ringOuter.className = 'orbit-ring orbit-ring-outer';
+  orbit.appendChild(ringOuter);
+
+  // VS Code center icon with glow + label
   const center = document.createElement('div');
   center.className = 'orbit-center';
   const cImg = document.createElement('img');
@@ -473,19 +483,19 @@ function renderOrbit(list) {
   cImg.alt = 'VS Code';
   cImg.draggable = false;
   center.appendChild(cImg);
+  const cLabel = document.createElement('div');
+  cLabel.className = 'orbit-center-label';
+  cLabel.textContent = 'VS Code';
+  center.appendChild(cLabel);
   center.title = 'Visual Studio Code';
   orbit.appendChild(center);
 
-  
-  // Subtle orbit ring guide
-  const ring = document.createElement('div');
-  ring.className = 'orbit-ring';
-  orbit.appendChild(ring);
-
+  // Distribute items across rings: first 3 on outer ring, rest on inner
   items.forEach((sk, i) => {
+    const useOuterRing = i < 3;
     const wrapper = document.createElement('div');
-    wrapper.className = 'orbit-item-wrapper';
-    wrapper.style.animationDelay = `-${i * 5}s`;
+    wrapper.className = 'orbit-item-wrapper ' + (useOuterRing ? 'orbit-outer' : 'orbit-inner');
+    wrapper.style.animationDelay = '-' + i * 4 + 's';
 
     const el = document.createElement('div');
     el.className = 'orbit-item';
@@ -504,8 +514,12 @@ function renderOrbit(list) {
     } else {
       el.textContent = String(sk.name || '').replace(/[^A-Za-z#+]/g, '').slice(0, 4).toUpperCase() || 'CODE';
     }
-    el.title = sk.name || '';
 
+    const label = document.createElement('div');
+    label.className = 'orbit-item-label';
+    label.textContent = sk.name || 'CODE';
+
+    el.appendChild(label);
     wrapper.appendChild(el);
     orbit.appendChild(wrapper);
   });
