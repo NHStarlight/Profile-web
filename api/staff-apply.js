@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
       score: score,
       maxScore: 5,
       reasons: reasons,
-      message: 'Đơn ứng viên đã được nhận. Chúng tôi sẽ xem xét và phản hồi qua justhanaa@proton.me'
+      message: 'Đơn ứng viên đã được nhận. Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể.'
     });
 
   } catch (err) {
