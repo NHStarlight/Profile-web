@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Tuyển Moderator Discord</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .test-container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .test-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; }
+    .test-card h2 { color: var(--accent); text-align: center; margin-bottom: 1.5rem; font-size: 1.8rem; }
+    .question { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .question h3 { color: var(--text); margin-bottom: 0.8rem; font-size: 1rem; }
+    .options { display: flex; flex-direction: column; gap: 0.5rem; }
+    .option { padding: 0.6rem 1rem; background: rgba(0,0,0,0.3); border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+    .option:hover { background: rgba(255,255,255,0.1); }
+    .option.selected { background: var(--accent); color: var(--bg); }
+    .essay { margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; }
+    .essay h3 { color: var(--accent); margin-bottom: 1rem; }
+    .essay textarea { width: 100%; min-height: 120px; padding: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: var(--text); font-family: 'Courier New', monospace; resize: vertical; }
+    .btn-submit { width: 100%; padding: 0.9rem 1rem; background: var(--accent); color: var(--bg); border: none; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; transition: background 0.3s; }
+    .btn-submit:hover { background: #e6e6e6; }
+    .result { margin-top: 2rem; padding: 1.5rem; border-radius: 8; display: none; }
+    .result.correct { background: rgba(46, 204, 113, 0.2); color: var(--accent); }
+    .result.wrong { background: rgba(192, 57, 43, 0.2); color: #e74c3c; }
+    .score { font-size: 2rem; font-weight: bold; margin: 1rem 0; }
+    .progress { width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 1rem; }
+    .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s; }
+  </style>
+</head>
+<body>
+
+  <div class="test-container">
+    <div class="test-card">
+      <h2>Test Tuyển Moderator Discord</h2>
+      <p>Thời gian: 30 phút | 18 Trắc nghiệm + 2 Tự luận</p>
+      <p>Điểm Pass: 12/18 (66.7%)</p>
+      
+      <form id="testForm">
+        <div id="mcq-section">
+          <!-- Câu hỏi sẽ được chèn bởi JS -->
+        </div>
+        <div class="essay">
+          <h3>Câu 19: Tình huống xung đột cá nhân</h3>
+          <textarea id="essay1" placeholder="Nêu các bước bạn sẽ làm để giải quyết một cách chuyên nghiệp..." required></textarea>
+        </div>
+        <div class="essay">
+          <h3>Câu 20: Điều quan trọng nhất</h3>
+          <textarea id="essay2" placeholder="Theo bạn, điều quan trọng nhất giúp Mod được thành viên tôn trọng và tin tưởng là gì?..." required></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Nộp bài test</button>
+      </form>
+      <div id="result" class="result" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Câu hỏi trắc nghiệm
+    const questions = [
+      { q: '1 Độ tuổi tối thiểu được phép sử dụng Discord theo Điều khoản Dịch vụ?', options: ['10 tuổi', '13 tuổi', '16 tuổi', '18 tuổi'], answer: 1 },
+      { q: '2 Thời gian Timeout tối đa mà Discord cho phép áp dụng?', options: ['7 ngày', '14 ngày', '28 ngày', 'Vĩnh viễn'], answer: 2 },
+      { q: '3 Quyền nào cho phép xóa tin nhắn của thành viên khác?', options: ['Manage Server', 'Manage Messages', 'Moderate Members', 'Read History'], answer: 1 },
+      { q: '4 Tính năng nào giúp giảm spam tin nhắn trên kênh?', options: ['Slowmode', 'Audit Log', 'Verification', 'Announcement'], answer: 0 },
+      { q: '5 Audit Log trên Discord dùng làm gì?', options: ['Xem tin nhắn riêng', 'Xem lịch sử hoạt động quản trị', 'Theo dõi thành viên online', 'Quản lý bạn bè'], answer: 1 },
+      { q: '6 Khác biệt chính giữa Kick và Ban?', options: ['Kick chỉ đuổi ra, Ban chặn hoàn toàn', 'Ban chỉ hiệu lực 7 ngày', 'Hoàn toàn giống nhau', 'Kick vĩnh viễn'], answer: 0 },
+      { q: '7 Tại sao Mod cần bật Xác minh 2 yếu tố (2FA)?', options: ['Đăng nhập nhanh hơn', 'Bảo vệ tài khoản & server', 'Đổi tên dễ hơn', 'Nhận Nitro miễn phí'], answer: 1 },
+      { q: '8 Nguyên tắc phân cấp Vai trò (Role Hierarchy)?', options: ['Vai trò trên quản lý được vai trò dưới', 'Vai trò dưới có thể xóa vai trò trên', 'Tất cả vai trò bằng nhau', 'Chỉ Admin có quyền'], answer: 0 },
+      { q: '9 Thành viên gửi biểu tượng vô nghĩa gây nhiễu kênh, xử lý phù hợp nhất?', options: ['Ban ngay lập tức', 'Bỏ qua', 'Xóa tin → Nhắc nhở → Timeout', 'Chửi lại họ'], answer: 2 },
+      { q: '10 Phát hiện link lừa đảo Nitro miễn phí, hành động đầu tiên?', options: ['Nhắn tin hỏi thử', 'Xóa link + xử lý theo luật', 'Đợi Admin', 'Thử nhấn vào xem'], answer: 1 },
+      { q: '11 Hai thành viên cãi nhau công khai, bạn sẽ?', options: ['Tham gia bình luận ai đúng Yêu cầu dừng → Mời nói riêng → Xử lý tiếp theo', 'Khóa vĩnh viễn cả hai', 'Bỏ qua cho tự giải quyết', 'Chuyển kênh khác'], answer: 1 },
+      { q: '12 Thành viên gửi nội dung không phù hợp?', options: ['Xóa ngay + giải thích quy tắc', 'Bỏ qua', 'Chờ 1 giờ rồi xóa', 'Chuyển nội dung sang kênh khác'], answer: 0 },
+      { q: '13 Server bị Raid — nhiều tài khoản mới gửi tin rác?', options: ['Tắt máy đi ngủ', 'Nâng cấp xác minh + tạm khóa kênh', 'Trả lời từng người', 'Xóa server luôn'], answer: 1 },
+      { q: '14 Thành viên bị cấm tạo tài khoản phụ (Ban Evading)?', options: ['Bỏ qua vì tài khoản khác', 'Vi phạm nặng — cấm tất cả tài khoản liên quan', 'Chỉ nhắc nhở', 'Mute 1 giờ'], answer: 1 },
+      { q: '15 Khi nào sử dụng lệnh tạm khóa kênh (Lock Channel)?', options: ['Mọi lúc', 'Có xung đột lớn hoặc bị tấn công', 'Khi không ai online', 'Cuối tuần'], answer: 1 },
+      { q: '16 Ghi rõ lý do khi ban/timeout quan trọng vì?', options: ['Để có bằng chứng & lưu vết', 'Chỉ để làm thủ tục', 'yêu cầu bắt buộc', 'Để thành viên không hỏi lại'], answer: 0 },
+      { q: '17 Bạn thân vi phạm quy tắc server, bạn sẽ?', options: ['Bỏ qua cho bạn', 'Xử lý như mọi thành viên khác', 'Chỉ nhắc nhẹ', 'Thông báo cho người khác biết'], answer: 1 },
+      { q: '18 Chia sẻ thông tin cá nhân (Doxxing) không được phép?', options: ['Vi phạm nặng — xóa ngay + cấm vĩnh viễn', 'Chỉ cần nhắc nhở', 'Không phải vi phạm', 'Mute 10 phút'], answer: 0 }
+    ];
+
+    let selectedAnswers = new Array(questions.length).fill(null);
+
+    function selectQuestion(qIndex, optIndex) {
+      const qs = document.querySelectorAll('.question .option');
+      qs.forEach(el => el.classList.remove('selected', 'correct', 'wrong'));
+      const selectedQ = document.querySelectorAll('.question')[qIndex];
+      if (selectedQ) {
+        const opts = selectedQ.querySelectorAll('.option');
+        if (opts[optIndex]) {
+          opts[optIndex].classList.add('selected');
+          selectedAnswers[qIndex] = optIndex;
+        }
+      }
+    }
+
+    // Render câu hỏi
+    const mcqSection = document.getElementById('mcq-section');
+    let html = '';
+    questions.forEach((q, idx) => {
+      const opts = q.options.map((opt, i) => `
+        <div class="option" onclick="selectQuestion(${idx}, ${i})">
+          ${String.fromCharCode(65 + i)}. ${opt}
+        </div>`).join('');
+      html += `<div class="question"><h3>${q.q}</h3><div class="options">${opts}</div></div>`;
+    });
+    mcqSection.innerHTML = html;
+
+    // Submit form
+    document.getElementById('testForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mcqAnswers = selectedAnswers;
+      const essay1 = document.getElementById('essay1').value.trim();
+      const essay2 = document.getElementById('essay2').value.trim();
+
+      let correct = 0;
+      questions.forEach((q, i) => {
+        if (mcqAnswers[i] === q.answer) correct++;
+      });
+      const total = questions.length;
+      const percentage = Math.round((correct / total) * 100);
+      const pass = correct >= 12;
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.style.display = 'block';
+      resultDiv.className = `result ${pass ? 'correct' : 'wrong'}`;
+      resultDiv.innerHTML = `<div class="score">Đúng: ${correct}/${total}</div><div>Phần trăm: ${percentage}%</div><div>${pass ? 'CHẮC - Đạt yêu cầu!' : 'THẤT - Cần làm lại'}</div>`;
+
+      // Show MCQ results
+      let mcqHtml = '<h4>Kết quả chi tiết:</h4>';
+      questions.forEach((q, i) => {
+        const isCorrect = mcqAnswers[i] === q.answer;
+        mcqHtml += `<p><strong>Câu ${i + 1}:</strong> ${isCorrect ? 'Đúng' : 'Sai'} (Bạn chọn: ${String.fromCharCode(65 + mcqAnswers[i]) || 'Không chọn'})</p>`;
+      });
+      resultDiv.innerHTML += mcqHtml;
+      resultDiv.innerHTML += `<p><strong>Câu 19:</strong> ${essay1.length} ký tự</p><p><strong>Câu 20:</strong> ${essay2.length} ký tự</p>`;
+    });
+  </script>
+</body>
+</html>
+
