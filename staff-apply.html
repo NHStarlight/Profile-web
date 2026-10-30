@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ỗm cơ hội Tuyển Staff</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ---- Staff Apply Page ---- */
+    .staff-apply {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .staff-apply h1 {
+      text-align: center;
+      color: var(--accent);
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 3px;
+    }
+    .staff-apply p {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(255,255,255,0.2);
+    }
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+      margin-top: 1rem;
+    }
+    .btn-submit:hover {
+      background: #e6e6e6;
+    }
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+    .success-msg {
+      text-align: center;
+      margin-top: 2rem;
+      color: var(--accent);
+      display: none;
+    }
+    .success-msg.visible {
+      display: block;
+    }
+    /* Optional: subtle orbit background */
+    .orbit-wrapper {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .orbit-ring {
+      position: absolute;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      animation: orbitSpin 20s linear infinite;
+    }
+    @keyframes orbitSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Optional subtle orbit background -->
+  <div class="orbit-wrapper">
+    <div class="orbit-ring" style="width: 300px; height: 300px; top: 50%; left: 50%; margin: -150px 0 0 -150px; animation-duration: 25s;"></div>
+    <div class="orbit-ring" style="width: 150px; height: 150px; top: 20%; left: 80%; margin: -75px 0 0 -75px; animation-duration: 18s;"></div>
+  </div>
+
+  <div class="staff-apply">
+    <h1>Tuyển Staff cho Server</h1>
+    <p>Vui lòng điền thông tin dưới đây để chúng tôi xem xét ứng viên của bạn.</p>
+
+    <form id="staffForm">
+      <div class="form-group">
+        <label for="fullName">Họ và Tên</label>
+        <input type="text" id="fullName" name="fullName" required placeholder="Ví dụ: Nguyễn Văn A">
+      </div>
+
+      <div class="form-group">
+        <label for="discordTag">Tag Discord</label>
+        <input type="text" id="discordTag" name="discordTag" placeholder="Ví dụ: Hana#0001">
+      </div>
+
+      <div class="form-group">
+        <label for="why">Tại sao muốn nhập staff?</label>
+        <textarea id="why" name="why" required placeholder="Nhập lý do bạn thích muốn gia nhập staff team..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="skills">Kiến thức hoặc kỹ năng bạn có (nếu có)</label>
+        <textarea id="skills" name="skills" placeholder="Ví dụ: Làm quản lý, tạo bot, thiết kế, v.v..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="portfolio">Portfolio/Link (nếu có)</label>
+        <input type="url" id="portfolio" name="portfolio" placeholder="https://...">
+      </div>
+
+      <button type="submit" class="btn-submit">Gửi đơn ứng viên</button>
+    </form>
+
+    <div class="success-msg" id="success">Cảm ơn! Chúng tôi sẽ xem xét ứng của bạn và gửi kết quả về email.</div>
+  </div>
+
+  <script>
+    // Simple form submission via Formspree (replace ACTION with your Formspree endpoint)
+    const form = document.getElementById('staffForm');
+    const successMsg = document.getElementById('success');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const object = Object.fromEntries(formData);
+      const json = JSON.stringify(object);
+      // Replace with your Formspree endpoint URL
+      const ACTION = 'https://formspree.io/f/your-form-id'; // TODO: replace
+
+      try {
+        const response = await fetch(ACTION, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: json
+        });
+        if (response.ok) {
+          successMsg.classList.add('visible');
+          form.reset();
+        } else {
+          alert('Có lỗi xảy ra, vui lòng thử lại.');
+        }
+      } catch (error) {
+        alert('Lỗi kết nối: ' + error.message);
+      }
+    });
+  </script>
+
+</body>
+</html>
