@@ -25,7 +25,9 @@
     .result.wrong { background: rgba(192, 57, 43, 0.2); color: #e74c3c; }
     .score { font-size: 2rem; font-weight: bold; margin: 1rem 0; }
     .progress { width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 1rem; }
-    .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s; }
+    .app-info { background: rgba(0,0,0,0.3); border-radius: 6px; padding: 1rem; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.1); }
+    .app-info h4 { color: var(--accent); margin-bottom: 0.5rem; }
+    .app-info p { font-size: 0.9rem; color: var(--muted); margin: 0.3rem 0; }
   </style>
 </head>
 <body>
@@ -36,6 +38,12 @@
       <p>Thời gian: 30 phút | 18 Trắc nghiệm + 2 Tự luận</p>
       <p>Điểm Pass: 12/18 (66.7%)</p>
       
+      <!-- Thông tin ứng viên đã đăng ký -->
+      <div id="app-info" class="app-info" style="display: none;">
+        <h4>📋 Thông tin ứng viên</h4>
+        <p id="app-info-text"></p>
+      </div>
+
       <form id="testForm">
         <div id="mcq-section">
           <!-- Câu hỏi sẽ được chèn bởi JS -->
@@ -79,6 +87,21 @@
 
     let selectedAnswers = new Array(questions.length).fill(null);
 
+    // Đọc dữ liệu ứng viên từ localStorage
+    const appData = JSON.parse(localStorage.getItem('staffAppData') || 'null');
+    const appInfoEl = document.getElementById('app-info');
+    const appInfoText = document.getElementById('app-info-text');
+
+    if (appData) {
+      appInfoEl.style.display = 'block';
+      appInfoText.innerHTML = `
+        <strong>Họ tên:</strong> ${appData.fullName || '—'}<br>
+        <strong>Discord:</strong> ${appData.discordTag || '—'}<br>
+        <strong>Điểm ứng viên:</strong> ${appData.appScore}/5<br>
+        <strong>Đăng ký lúc:</strong> ${new Date(appData.submittedAt).toLocaleString('vi-VN')}
+      `;
+    }
+
     function selectQuestion(qIndex, optIndex) {
       const qs = document.querySelectorAll('.question .option');
       qs.forEach(el => el.classList.remove('selected', 'correct', 'wrong'));
@@ -105,7 +128,7 @@
     mcqSection.innerHTML = html;
 
     // Submit form
-    document.getElementById('testForm').addEventListener('submit', (e) => {
+    document.getElementById('testForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const mcqAnswers = selectedAnswers;
       const essay1 = document.getElementById('essay1').value.trim();
@@ -132,6 +155,40 @@
       });
       resultDiv.innerHTML += mcqHtml;
       resultDiv.innerHTML += `<p><strong>Câu 19:</strong> ${essay1.length} ký tự</p><p><strong>Câu 20:</strong> ${essay2.length} ký tự</p>`;
+
+      // Gửi toàn bộ dữ liệu (ứng viên + test) đến API
+      try {
+        const submitData = {
+          application: appData || null,
+          testScore: correct,
+          testTotal: total,
+          testPercentage: percentage,
+          testPass: pass,
+          essay1: essay1,
+          essay2: essay2,
+          mcqAnswers: mcqAnswers,
+          submittedAt: new Date().toISOString()
+        };
+
+        const resp = await fetch('/api/test-result', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submitData)
+        });
+
+        const respData = await resp.json();
+        if (respData.ok) {
+          resultDiv.innerHTML += '<p style="color: var(--accent); margin-top: 1rem;"><strong>✓ Đã gửi toàn bộ đơn ứng viên + kết quả test thành công!</strong></p>';
+        } else {
+          resultDiv.innerHTML += `<p style="color: #ff8888; margin-top: 1rem;"><strong>⚠ Gửi kết quả test gặp lỗi: ${respData.error || 'Không known'}</strong></p>`;
+        }
+      } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML += '<p style="color: #ffd600; margin-top: 1rem;"><strong>⚠ Không thể gửi kết quả test đến server. Vui lòng liên hệ admin trực tiếp.</strong></p>';
+      }
+
+      // Xóa localStorage sau khi gửi
+      localStorage.removeItem('staffAppData');
     });
   </script>
 </body>

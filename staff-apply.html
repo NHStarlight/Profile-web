@@ -214,11 +214,26 @@
             successMsg.innerHTML = `
               <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 6; margin-top: 1rem;">
                 <h3>✓ Đơn ứng viên đã được ghi nhận!</h3>
-                <p>Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể.</p>
+                <p>Điểm ứng viên: <strong>${result.score}/5</strong> (${result.reasons.length}/5 lý do)</p>
+                <p>Bây giờ hãy làm kiểm tra Tuyển Moderator để hoàn thành đơn ứng viên.</p>
               </div>
             `;
             successMsg.style.display = 'block';
-            // Don't reset form - let user keep their text
+            
+            // Save application data to localStorage for test page
+            const appData = {
+              ...object,
+              appScore: result.score || 0,
+              appReasons: result.reasons || [],
+              appId: result.applicationId || Date.now(),
+              submittedAt: new Date().toISOString()
+            };
+            localStorage.setItem('staffAppData', JSON.stringify(appData));
+            
+            // Redirect to test page after 2 seconds
+            setTimeout(() => {
+              window.location.href = '/staff-apply/test';
+            }, 2000);
           } else {
             // API error but page still works
             successMsg.innerHTML = `
