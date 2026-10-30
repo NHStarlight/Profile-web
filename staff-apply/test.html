@@ -10,7 +10,7 @@
     .test-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; }
     .test-card h2 { color: var(--accent); text-align: center; margin-bottom: 1.5rem; font-size: 1.8rem; }
     .question { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .question h3 { color: var(--text); margin-bottom: 0.8rem; font-size: 1rem; }
+    .question h3 { color: var(--text); margin-bottom: 0.8rem; font-size: 1rem; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; }
     .options { display: flex; flex-direction: column; gap: 0.5rem; }
     .option { padding: 0.6rem 1rem; background: rgba(0,0,0,0.3); border-radius: 6px; cursor: pointer; transition: background 0.2s; }
     .option:hover { background: rgba(255,255,255,0.1); }
@@ -103,11 +103,11 @@
     }
 
     function selectQuestion(qIndex, optIndex) {
-      const qs = document.querySelectorAll('.question .option');
-      qs.forEach(el => el.classList.remove('selected', 'correct', 'wrong'));
+      // Chỉ xóa selected trong CÂU HỎI HIỆN TẠI, không ảnh hưởng câu khác
       const selectedQ = document.querySelectorAll('.question')[qIndex];
       if (selectedQ) {
         const opts = selectedQ.querySelectorAll('.option');
+        opts.forEach(el => el.classList.remove('selected'));
         if (opts[optIndex]) {
           opts[optIndex].classList.add('selected');
           selectedAnswers[qIndex] = optIndex;
