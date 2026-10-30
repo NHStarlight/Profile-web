@@ -154,7 +154,6 @@
         mcqHtml += `<p><strong>Câu ${i + 1}:</strong> ${isCorrect ? 'Đúng' : 'Sai'} (Bạn chọn: ${String.fromCharCode(65 + mcqAnswers[i]) || 'Không chọn'})</p>`;
       });
       resultDiv.innerHTML += mcqHtml;
-      resultDiv.innerHTML += `<p><strong>Câu 19:</strong> ${essay1.length} ký tự</p><p><strong>Câu 20:</strong> ${essay2.length} ký tự</p>`;
 
       // Gửi toàn bộ dữ liệu (ứng viên + test) đến API
       try {
