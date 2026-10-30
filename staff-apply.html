@@ -94,12 +94,14 @@
       inset: 0;
       z-index: 0;
       overflow: hidden;
+      pointer-events: none;
     }
     .orbit-ring {
       position: absolute;
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 50%;
       animation: orbitSpin 20s linear infinite;
+      pointer-events: none;
     }
     @keyframes orbitSpin {
       from { transform: rotate(0deg); }
