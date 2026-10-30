@@ -152,76 +152,94 @@
   </div>
 
   <script>
-    const form = document.getElementById('staffForm');
-    const successMsg = document.getElementById('success');
-    
-    // Đảm bảo tất cả input fields focusable và có thể gõ
-    document.addEventListener('DOMContentLoaded', () => {
+    // === FIX: Ensure inputs ALWAYS work, no matter what ===
+    // Run immediately - not waiting for DOMContentLoaded
+    (function() {
+      const form = document.getElementById('staffForm');
+      if (!form) return;
+      
+      // Remove any disabled attributes instantly
+      form.querySelectorAll('input, textarea, select').forEach(el => {
+        el.removeAttribute('disabled');
+        el.removeAttribute('readonly');
+        // Ensure pointer events
+        el.style.pointerEvents = 'auto';
+        // Ensure appearance is default
+        el.style.webkitAppearance = 'none';
+        el.style.mozAppearance = 'none';
+      });
+      
+      // Force make inputs focusable and editable
       const inputs = form.querySelectorAll('input, textarea');
       inputs.forEach(input => {
-        input.removeAttribute('disabled');
-        input.addEventListener('focus', () => {
-          input.style.borderColor = '#a0dff5';
-        });
-        input.addEventListener('blur', () => {
-          input.style.borderColor = 'rgba(255,255,255,0.2)';
-        });
+        input.tabIndex = 0;
+        input.setAttribute('role', 'textbox');
+        input.setAttribute('aria-disabled', 'false');
+        input.setAttribute('aria-readonly', 'false');
       });
-    });
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
       
-      // Collect form data
-      const formData = new FormData(form);
-      const object = Object.fromEntries(formData);
+      // === ORIGINAL FORM SUBMIT HANDLER ===
+      const successMsg = document.getElementById('success');
       
-      // Clear previous messages
-      successMsg.style.display = 'none';
-      successMsg.innerHTML = '';
-      
-      try {
-        // Send to our own API for logging + scoring
-        const response = await fetch('/api/staff-apply', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(object),
-        });
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        // Try to parse JSON response, handle gracefully
-        let result;
+        // Clear any previous messages
+        successMsg.style.display = 'none';
+        successMsg.innerHTML = '';
+        
+        // Collect form data
+        const formData = new FormData(form);
+        const object = Object.fromEntries(formData);
+        
         try {
-          result = await response.json();
-        } catch {
-          result = { ok: false, error: 'Phản hồi từ server không đúng định dạng' };
-        }
-        
-        if (result.ok) {
-          // Success case
+          // Send to API
+          const response = await fetch('/api/staff-apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(object)
+          });
+          
+          let result;
+          try {
+            result = await response.json();
+          } catch {
+            result = { ok: false, error: 'Phản hồi không hợp lệ' };
+          }
+          
+          // Show result one way or another
+          if (result && result.ok) {
+            successMsg.innerHTML = `
+              <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 6; margin-top: 1rem;">
+                <h3>✓ Được lưu!</h3>
+                <p>Đã ghi nhận đơn ứng viên. Chúng tôi sẽ xem xét qua justhanaa@proton.me</p>
+              </div>
+            `;
+            successMsg.style.display = 'block';
+            // Don't reset form - let user keep their text
+          } else {
+            // API error but page still works
+            successMsg.innerHTML = `
+              <div style="background: rgba(255,0,0,0.1); padding: 1rem; border-radius: 6; margin-top: 1rem; color:#ff8888;">
+                <h3>⚠ Lưu không thành công</h3>
+                <p>Server bận - Vui lòng thử lại hoặc điền lại thông tin.</p>
+              </div>
+            `;
+            successMsg.style.display = 'block';
+          }
+        } catch (err) {
+          // Network error
+          console.error(err);
           successMsg.innerHTML = `
-            <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8; margin-top: 1rem;">
-              <h3>✓ Đơn ứng viên đã được lưu!</h3>
-              <p>Điểm chấm nhận định: <strong>${result.score || 0}/5</strong> (${result.reasons ? result.reasons.length : 0}/5 lý do)</p>
-              <p>Lý do: ${result.reasons ? result.reasons.map(r => '• ' + r).join('<br>') : 'Đang xử lý'}</p>
-              <p>Chúng tôi sẽ xem xét và liên hệ qua email: justhanaa@proton.me</p>
+            <div style="background: rgba(255,255,0,0.1); padding: 1rem; border-radius: 6; margin-top: 1rem; color:#ffd600;">
+              <h3>⚠ Không có kết nối</h3>
+              <p>Không thể reach server - Tuy nhiên, bạn đã điền xong. Lưu locally hoặc thử lại.</p>
             </div>
           `;
           successMsg.style.display = 'block';
-          form.reset();
-        } else {
-          // API returned error but OK flag is false
-          alert('Có lỗi xảy ra khi lưu đơn: ' + (result.error || 'Vui lòng thử lại sau'));
         }
-      } catch (error) {
-        // Network error or other fetch error
-        console.error('Lỗi fetch:', error);
-        // Even if API fails, still allow form submission visually
-        alert('Không thể kết nối đến máy chủ. Tuy nhiên, bạn vẫn có thể gõ nội dung. Vui lòng thử lại sau hoặc liên hệ admin trực tiếp.');
-        // Don't reset the form so user can copy their input
-      }
-    });
+      });
+    })();
   </script>
 
 </body>
