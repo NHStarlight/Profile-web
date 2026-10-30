@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lộ trình Tuyển Staff - Điểm số</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .staff-log { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .staff-log h1 { text-align: center; color: var(--accent); font-size: 2rem; margin-bottom: 1rem; letter-spacing: 2px; }
+    .staff-log p { text-align: center; color: var(--muted); margin-bottom: 2rem; }
+    .log-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .log-table th, .log-table td { padding: 0.75rem 1rem; border: 1px solid rgba(255,255,255,0.1); color: var(--text); }
+    .log-table th { background: rgba(255,255,255,0.05); }
+    .log-table tr:hover { background: rgba(255,255,255,0.03); }
+    .score-badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .score-value { color: var(--accent); font-weight: 700; }
+    .no-data { text-align: center; color: var(--muted); padding: 3rem; }
+    .back-link { display: inline-block; margin: 2rem 0 1rem; color: var(--muted); text-decoration: underline; }
+    .back-link:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <div class="staff-log">
+    <h1>Lộ trình Tuyển Staff</h1>
+    <p>Danh sách ứng viên đã nộp đơn kèm theo điểm chấm nhận định</p>
+
+    <a href="../" class="back-link">← Quay lại trang chính</a>
+
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Họ và Tên</th>
+          <th>Tag Discord</th>
+          <th>Lý do</th>
+          <th>Kỹ năng</th>
+          <th>Portfolio</th>
+          <th>Điểm</th>
+          <th>Ngày nộp</th>
+        </tr>
+      </thead>
+      <tbody id="applications-list">
+        <!-- Sẽ được chèn bởi JS -->
+      </tbody>
+    </table>
+
+    <div id="no-data" class="no-data" style="display: none;">
+      Chưa có ứng viên nào nộp đơn.
+    </div>
+  </div>
+
+  <script>
+    async function loadApplications() {
+      const res = await fetch('/api/staff-apply/list');
+      const data = await res.json();
+
+      const tbody = document.getElementById('applications-list');
+      const noData = document.getElementById('no-data');
+
+      if (!data.ok) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Lỗi tải dữ liệu</td></tr>';
+        return;
+      }
+
+      const apps = data.applications || [];
+
+      if (apps.length === 0) {
+        tbody.style.display = 'none';
+        noData.style.display = 'block';
+        return;
+      }
+
+      tbody.style.display = 'table-row-group';
+      noData.style.display = 'none';
+
+      let html = '';
+      apps.forEach((app, idx) => {
+        const scorePercent = app.score / 5 * 100;
+        html += `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${app.fullName || '—'}</td>
+            <td>${app.discordTag || '—'}</td>
+            <td>${app.why ? app.why.substring(0, 60) + (app.why.length > 60 ? '…' : '') : '—'}</td>
+            <td>${app.skills ? app.skills.substring(0, 50) + (app.skills.length > 50 ? '…' : '') : '—'}</td>
+            <td>${app.portfolio || '—'}</td>
+            <td><span class="score-badge"><span class="score-value">${app.score}/5</span> (${Math.round(scorePercent)}%)</span></td>
+            <td>${new Date(app.createdAt).toLocaleDateString('vi-VN')}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    loadApplications();
+  </script>
+
+</body>
+</html>

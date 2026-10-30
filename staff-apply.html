@@ -152,32 +152,42 @@
   </div>
 
   <script>
-    // Simple form submission via Formspree (replace ACTION with your Formspree endpoint)
     const form = document.getElementById('staffForm');
     const successMsg = document.getElementById('success');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // Collect form data
       const formData = new FormData(form);
       const object = Object.fromEntries(formData);
-      const json = JSON.stringify(object);
-      // Replace with your Formspree endpoint URL
-      const ACTION = 'https://formspree.io/f/your-form-id'; // TODO: replace
 
       try {
-        const response = await fetch(ACTION, {
+        // Send to our own API for logging + scoring
+        const response = await fetch('/api/staff-apply', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
           },
-          body: json
+          body: JSON.stringify(object),
         });
-        if (response.ok) {
-          successMsg.classList.add('visible');
+
+        const result = await response.json();
+
+        if (result.ok) {
+          // Show success message with score
+          successMsg.innerHTML = `
+            <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8; margin-top: 1rem;">
+              <h3>✓ Đơn ứng viên đã được lưu!</h3>
+              <p>Điểm chấm nhận định: <strong>${result.score}/5</strong> (${result.reasons.length}/5 lý do)</p>
+              <p>Lý do: ${result.reasons.map(r => '• ' + r).join('<br>')}</p>
+              <p>Chúng tôi sẽ xem xét và liên hệ qua email: justhanaa@proton.me</p>
+            </div>
+          `;
+          successMsg.style.display = 'block';
           form.reset();
         } else {
-          alert('Có lỗi xảy ra, vui lòng thử lại.');
+          alert('Có lỗi xảy ra khi lưu đơn: ' + (result.error || 'Vui lòng thử lại.'));
         }
       } catch (error) {
         alert('Lỗi kết nối: ' + error.message);
