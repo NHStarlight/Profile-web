@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Ứng viên Staff</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .admin-container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+    .admin-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; }
+    .admin-card h2 { color: var(--accent); text-align: center; margin-bottom: 1.5rem; font-size: 1.8rem; }
+    .stats { display: flex; gap: 1rem; margin-bottom: 2rem; text-align: center; }
+    .stat-item { flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; border: 1px solid rgba(255,255,255,0.1); }
+    .stat-value { font-size: 2rem; font-weight: bold; color: var(--accent); display: block; }
+    .stat-label { font-size: 0.9rem; color: var(--muted); }
+    .app-card { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05); }
+    .app-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; }
+    .app-name { font-weight: 600; color: var(--text); font-size: 1.1rem; }
+    .app-discord { color: var(--muted); font-size: 0.9rem; }
+    .app-score { font-weight: bold; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.9rem; }
+    .score-pass { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+    .score-fail { background: rgba(192, 57, 43, 0.2); color: #e74c3c; }
+    .app-details { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.8rem; }
+    .app-details p { margin: 0.3rem 0; }
+    .test-result { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.1); }
+    .test-score { font-weight: bold; font-size: 1.2rem; }
+    .test-pass { color: #2ecc71; }
+    .test-fail { color: #e74c3c; }
+    .actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+    .btn-action { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: opacity 0.2s; }
+    .btn-action:hover { opacity: 0.8; }
+    .btn-approve { background: #2ecc71; color: #fff; }
+    .btn-reject { background: #e74c3c; color: #fff; }
+    .btn-review { background: rgba(255,255,255,0.1); color: var(--text); }
+    .status-badge { padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-left: 0.5rem; }
+    .status-pending { background: rgba(255,255,0,0.2); color: #ffd700; }
+    .status-approved { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+    .status-rejected { background: rgba(192, 57, 43, 0.2); color: #e74c3c; }
+    .no-data { text-align: center; color: var(--muted); padding: 3rem; }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--muted); text-decoration: underline; }
+    .back-link:hover { color: var(--accent); }
+    .essay-preview { max-height: 100px; overflow-y: auto; font-size: 0.85rem; background: rgba(0,0,0,0.2); padding: 0.6rem; border-radius: 4px; margin-top: 0.4rem; }
+  </style>
+</head>
+<body>
+
+  <div class="admin-container">
+    <div class="admin-card">
+      <h2>Quản lý Ứng viên Staff</h2>
+      <a href="../" class="back-link">← Quay lại trang chủ</a>
+      
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-label">Tổng đơn</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-pending">0</span>
+          <span class="stat-label">Chờ duyệt</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-approved">0</span>
+          <span class="stat-label">Đã duyệt</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-rejected">0</span>
+          <span class="stat-label">Từ chối</span>
+        </div>
+      </div>
+
+      <div id="applications-list"></div>
+      <div id="no-data" class="no-data" style="display: none;">Chưa có đơn ứng viên nào.</div>
+    </div>
+  </div>
+
+  <script>
+    async function loadApplications() {
+      try {
+        const appsRes = await fetch('/api/staff-apply/list');
+        const appsData = await appsRes.json();
+        render(appsData, []);
+      } catch (err) {
+        console.error(err);
+        render({ ok: true, applications: [] }, []);
+      }
+    }
+
+    function render(appsData, testData) {
+      const listEl = document.getElementById('applications-list');
+      const noDataEl = document.getElementById('no-data');
+      const statTotal = document.getElementById('stat-total');
+      const statPending = document.getElementById('stat-pending');
+      const statApproved = document.getElementById('stat-approved');
+      const statRejected = document.getElementById('stat-rejected');
+
+      const apps = appsData.applications || [];
+
+      if (apps.length === 0) {
+        listEl.style.display = 'none';
+        noDataEl.style.display = 'block';
+        statTotal.textContent = '0';
+        statPending.textContent = '0';
+        statApproved.textContent = '0';
+        statRejected.textContent = '0';
+        return;
+      }
+
+      listEl.style.display = 'block';
+      noDataEl.style.display = 'none';
+
+      let total = 0, pending = 0, approved = 0, rejected = 0;
+      let html = '';
+
+      apps.forEach((app, idx) => {
+        total++;
+        const status = app.status || 'pending';
+        if (status === 'pending') pending++;
+        else if (status === 'approved') approved++;
+        else if (status === 'rejected') rejected++;
+
+        const scoreClass = app.appScore >= 3 ? 'score-pass' : 'score-fail';
+        const statusClass = `status-${status}`;
+
+        html += `
+          <div class="app-card" data-id="${app.id}">
+            <div class="app-header">
+              <div>
+                <div class="app-name">${app.fullName || '—'}</div>
+                <div class="app-discord">Discord: ${app.discordTag || '—'} • ID: #${app.id}</div>
+                <span class="status-badge ${statusClass}">${status === 'pending' ? 'Chờ duyệt' : status === 'approved' ? 'Đã duyệt' : 'Từ chối'}</span>
+              </div>
+              <div class="app-score ${scoreClass}">${app.appScore}/5</div>
+            </div>
+            
+            <div class="app-details">
+              <p><strong>Lý do:</strong> ${(app.why || '').substring(0, 100)}${app.why && app.why.length > 100 ? '...' : ''}</p>
+              <p><strong>Kỹ năng:</strong> ${(app.skills || '—').substring(0, 80)}${app.skills && app.skills.length > 80 ? '...' : ''}</p>
+              <p><strong>Portfolio:</strong> ${app.portfolio || '—'}</p>
+              <p><strong>Nộp lúc:</strong> ${new Date(app.createdAt || app.submittedAt).toLocaleString('vi-VN')}</p>
+            </div>
+
+            <div class="actions">
+              <button class="btn-action btn-review" onclick="viewDetail(${idx})">Xem chi tiết</button>
+              <button class="btn-action btn-approve" onclick="updateStatus(${app.id}, 'approved')">Duyệt</button>
+              <button class="btn-action btn-reject" onclick="updateStatus(${app.id}, 'rejected')">Từ chối</button>
+            </div>
+          </div>
+        `;
+      });
+
+      listEl.innerHTML = html;
+      statTotal.textContent = total;
+      statPending.textContent = pending;
+      statApproved.textContent = approved;
+      statRejected.textContent = rejected;
+    }
+
+    async function updateStatus(appId, status) {
+      if (!confirm(`Bạn chắc chắn muốn ${status === 'approved' ? 'duyệt' : 'từ chối'} đơn này?`)) return;
+      try {
+        const res = await fetch(`/api/staff-apply/update/${appId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          loadApplications();
+        } else {
+          alert('Cập nhật trạng thái thất bại');
+        }
+      } catch (err) {
+        alert('Lỗi kết nối');
+      }
+    }
+
+    function viewDetail(idx) {
+      alert('Xem chi tiết đơn ứng viên - tính năng sắp ra mắt');
+    }
+
+    loadApplications();
+  </script>
+</body>
+</html>
