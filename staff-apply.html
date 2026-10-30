@@ -154,14 +154,32 @@
   <script>
     const form = document.getElementById('staffForm');
     const successMsg = document.getElementById('success');
+    
+    // Đảm bảo tất cả input fields focusable và có thể gõ
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputs = form.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.removeAttribute('disabled');
+        input.addEventListener('focus', () => {
+          input.style.borderColor = '#a0dff5';
+        });
+        input.addEventListener('blur', () => {
+          input.style.borderColor = 'rgba(255,255,255,0.2)';
+        });
+      });
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
+      
       // Collect form data
       const formData = new FormData(form);
       const object = Object.fromEntries(formData);
-
+      
+      // Clear previous messages
+      successMsg.style.display = 'none';
+      successMsg.innerHTML = '';
+      
       try {
         // Send to our own API for logging + scoring
         const response = await fetch('/api/staff-apply', {
@@ -171,26 +189,37 @@
           },
           body: JSON.stringify(object),
         });
-
-        const result = await response.json();
-
+        
+        // Try to parse JSON response, handle gracefully
+        let result;
+        try {
+          result = await response.json();
+        } catch {
+          result = { ok: false, error: 'Phản hồi từ server không đúng định dạng' };
+        }
+        
         if (result.ok) {
-          // Show success message with score
+          // Success case
           successMsg.innerHTML = `
             <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8; margin-top: 1rem;">
               <h3>✓ Đơn ứng viên đã được lưu!</h3>
-              <p>Điểm chấm nhận định: <strong>${result.score}/5</strong> (${result.reasons.length}/5 lý do)</p>
-              <p>Lý do: ${result.reasons.map(r => '• ' + r).join('<br>')}</p>
+              <p>Điểm chấm nhận định: <strong>${result.score || 0}/5</strong> (${result.reasons ? result.reasons.length : 0}/5 lý do)</p>
+              <p>Lý do: ${result.reasons ? result.reasons.map(r => '• ' + r).join('<br>') : 'Đang xử lý'}</p>
               <p>Chúng tôi sẽ xem xét và liên hệ qua email: justhanaa@proton.me</p>
             </div>
           `;
           successMsg.style.display = 'block';
           form.reset();
         } else {
-          alert('Có lỗi xảy ra khi lưu đơn: ' + (result.error || 'Vui lòng thử lại.'));
+          // API returned error but OK flag is false
+          alert('Có lỗi xảy ra khi lưu đơn: ' + (result.error || 'Vui lòng thử lại sau'));
         }
       } catch (error) {
-        alert('Lỗi kết nối: ' + error.message);
+        // Network error or other fetch error
+        console.error('Lỗi fetch:', error);
+        // Even if API fails, still allow form submission visually
+        alert('Không thể kết nối đến máy chủ. Tuy nhiên, bạn vẫn có thể gõ nội dung. Vui lòng thử lại sau hoặc liên hệ admin trực tiếp.');
+        // Don't reset the form so user can copy their input
       }
     });
   </script>
