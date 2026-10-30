@@ -155,7 +155,13 @@
       });
       resultDiv.innerHTML += mcqHtml;
 
-      // Gửi toàn bộ dữ liệu (ứng viên + test) đến API
+      // Kiểm tra đã nộp bài chưa (tránh gửi 2 lần)
+    if (localStorage.getItem('testSubmitted') === 'true') {
+      alert('Bạn đã nộp bài test rồi! Không thể gửi lại.');
+      return;
+    }
+
+    // Gửi toàn bộ dữ liệu (ứng viên + test) đến API
       try {
         const submitData = {
           application: appData || null,
@@ -178,6 +184,8 @@
         const respData = await resp.json();
         if (respData.ok) {
           resultDiv.innerHTML += '<p style="color: var(--accent); margin-top: 1rem;"><strong>✓ Đã gửi toàn bộ đơn ứng viên + kết quả test thành công!</strong></p>';
+          // Đánh dấu đã nộp để tránh gửi lại
+          localStorage.setItem('testSubmitted', 'true');
         } else {
           resultDiv.innerHTML += `<p style="color: #ff8888; margin-top: 1rem;"><strong>⚠ Gửi kết quả test gặp lỗi: ${respData.error || 'Không known'}</strong></p>`;
         }

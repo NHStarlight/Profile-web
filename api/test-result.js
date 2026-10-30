@@ -18,9 +18,17 @@ module.exports = async (req, res) => {
 
     const { application, testScore, testTotal, testPercentage, testPass, essay1, essay2, mcqAnswers, submittedAt } = body;
 
+    // Combine application + test results into ONE record
     const record = {
-      id: Date.now(),
-      application: application || null,
+      id: application?.id || Date.now(),
+      fullName: application?.fullName || '',
+      discordTag: application?.discordTag || '',
+      why: application?.why || '',
+      skills: application?.skills || '',
+      portfolio: application?.portfolio || '',
+      appScore: application?.appScore || 0,
+      appReasons: application?.appReasons || [],
+      appSubmittedAt: application?.submittedAt || '',
       testScore: testScore || 0,
       testTotal: testTotal || 18,
       testPercentage: testPercentage || 0,
@@ -28,22 +36,23 @@ module.exports = async (req, res) => {
       essay1: essay1 || '',
       essay2: essay2 || '',
       mcqAnswers: mcqAnswers || [],
-      submittedAt: submittedAt || new Date().toISOString()
+      submittedAt: submittedAt || new Date().toISOString(),
+      status: 'pending' // pending, approved, rejected
     };
 
-    // Try to save to Neon database if configured
+    // Try to save to Neon database
     try {
       const sql = getSql();
       if (sql) {
         await sql`
-          CREATE TABLE IF NOT EXISTS staff_test_results (
+          CREATE TABLE IF NOT EXISTS staff_submissions (
             id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
             data JSONB NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
           )
         `;
         await sql`
-          INSERT INTO staff_test_results (data, created_at)
+          INSERT INTO staff_submissions (data, created_at)
           VALUES (${JSON.stringify(record)}::jsonb, NOW())
         `;
       } else {

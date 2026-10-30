@@ -10,40 +10,48 @@ module.exports = async (req, res) => {
       return res.status(500).json({ ok: false, error: 'Database not configured' });
     }
 
-    // Ensure table exists
+    // Read from staff_submissions table (contains both application + test results)
     await sql`
-      CREATE TABLE IF NOT EXISTS staff_applications (
+      CREATE TABLE IF NOT EXISTS staff_submissions (
         id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-        full_name TEXT,
-        discord_tag TEXT,
-        why TEXT,
-        skills TEXT,
-        portfolio TEXT,
-        score INT NOT NULL DEFAULT 0,
+        data JSONB NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
 
     const rows = await sql`
-      SELECT id, full_name, discord_tag, why, skills, portfolio, score, created_at
-      FROM staff_applications
+      SELECT id, data, created_at
+      FROM staff_submissions
       ORDER BY created_at DESC
     `;
 
     return res.status(200).json({
       ok: true,
       count: rows.length,
-      applications: rows.map(r => ({
-        id: r.id,
-        fullName: r.full_name,
-        discordTag: r.discord_tag,
-        why: r.why,
-        skills: r.skills,
-        portfolio: r.portfolio,
-        score: r.score,
-        maxScore: 5,
-        createdAt: r.created_at
-      }))
+      applications: rows.map(r => {
+        const d = r.data || {};
+        return {
+          id: d.id || r.id,
+          fullName: d.fullName || '',
+          discordTag: d.discordTag || '',
+          why: d.why || '',
+          skills: d.skills || '',
+          portfolio: d.portfolio || '',
+          appScore: d.appScore || 0,
+          appReasons: d.appReasons || [],
+          appSubmittedAt: d.appSubmittedAt || '',
+          testScore: d.testScore || 0,
+          testTotal: d.testTotal || 18,
+          testPercentage: d.testPercentage || 0,
+          testPass: d.testPass || false,
+          essay1: d.essay1 || '',
+          essay2: d.essay2 || '',
+          mcqAnswers: d.mcqAnswers || [],
+          submittedAt: d.submittedAt || r.created_at,
+          status: d.status || 'pending',
+          createdAt: r.created_at
+        };
+      })
     });
 
   } catch (err) {

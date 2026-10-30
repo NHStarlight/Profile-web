@@ -28,9 +28,17 @@ module.exports = async (req, res) => {
       const sql = getSql();
       if (sql) {
         await sql`
-          UPDATE staff_applications
-          SET status = ${status}, updated_at = NOW()
-          WHERE id = ${appId}
+          CREATE TABLE IF NOT EXISTS staff_submissions (
+            id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+            data JSONB NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )
+        `;
+        await sql`
+          UPDATE staff_submissions
+          SET data = jsonb_set(data, '{status}', ${JSON.stringify(status)}::jsonb),
+              created_at = NOW()
+          WHERE (data->>'id')::int = ${appId}
         `;
         return res.status(200).json({ ok: true, message: `Đã cập nhật trạng thái thành ${status}` });
       }

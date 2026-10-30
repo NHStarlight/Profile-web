@@ -74,6 +74,20 @@
   </div>
 
   <script>
+    // ===== BẢO VỆ BẰNG MẬT KHẨU =====
+    const ADMIN_PASSWORD = 'admin123'; // Đổi mật khẩu ở đây
+
+    const savedPassword = localStorage.getItem('adminAuth');
+    if (savedPassword !== ADMIN_PASSWORD) {
+      const input = prompt('🔐 Nhập mật khẩu để truy cập trang quản lý:');
+      if (input !== ADMIN_PASSWORD) {
+        document.body.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);"><h2>Truy cập bị từ chối</h2><p>Mật khẩu không đúng.</p></div>';
+      } else {
+        localStorage.setItem('adminAuth', ADMIN_PASSWORD);
+        location.reload();
+      }
+    }
+
     async function loadApplications() {
       try {
         const appsRes = await fetch('/api/staff-apply/list');
