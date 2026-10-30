@@ -3,7 +3,7 @@
   --accent: #ffffff;
   --accent2: #000000;
   --bg: #070b16;
-  --text: #e8ecf5;
+  --text: #f0f0f0; /* Đã sửa: Màu trắng hơn để nổi bật trên input background */
   --muted: #8b93a8;
 }
 
