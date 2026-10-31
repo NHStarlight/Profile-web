@@ -7,7 +7,13 @@ module.exports = async (req, res) => {
   try {
     const sql = getSql();
     if (!sql) {
-      return res.status(500).json({ ok: false, error: 'Database not configured' });
+      // Database not configured on Vercel — return empty gracefully
+      return res.status(200).json({
+        ok: true,
+        count: 0,
+        applications: [],
+        message: 'DATABASE_URL not configured on Vercel. Add it to Environment Variables to see submissions.'
+      });
     }
 
     // Read from staff_submissions table (contains both application + test results)

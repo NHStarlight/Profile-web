@@ -70,6 +70,10 @@
 
       <div id="applications-list"></div>
       <div id="no-data" class="no-data" style="display: none;">Chưa có đơn ứng viên nào.</div>
+      <div id="db-warning" class="no-data" style="display: none; background: rgba(255,255,0,0.1); border: 1px solid rgba(255,255,0,0.3); color: #ffd700;">
+        ⚠️ DATABASE_URL chưa được cấu hình trên Vercel. Dữ liệu sẽ không lưu giữa các lần reboot. 
+        <br>Hãy thêm DATABASE_URL vào Vercel Dashboard → Settings → Environment Variables.
+      </div>
     </div>
   </div>
 
@@ -92,6 +96,13 @@
       try {
         const appsRes = await fetch('/api/staff-apply/list');
         const appsData = await appsRes.json();
+        
+        // Show warning if DATABASE_URL not configured
+        const dbWarning = document.getElementById('db-warning');
+        if (appsData.message && appsData.message.includes('DATABASE_URL not configured')) {
+          dbWarning.style.display = 'block';
+        }
+        
         render(appsData, []);
       } catch (err) {
         console.error(err);
