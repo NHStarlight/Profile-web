@@ -94,7 +94,7 @@
 
     async function loadApplications() {
       try {
-        const appsRes = await fetch('/api/staff-apply/list');
+        const appsRes = await fetch('/api/staff-apply-list');
         const appsData = await appsRes.json();
         
         // Show warning if DATABASE_URL not configured
@@ -191,7 +191,7 @@
     async function updateStatus(appId, status) {
       if (!confirm(`Bạn chắc chắn muốn ${status === 'approved' ? 'duyệt' : 'từ chối'} đơn này?`)) return;
       try {
-        const res = await fetch(`/api/staff-apply/update/${appId}`, {
+        const res = await fetch(`/api/staff-apply-update/${appId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status })
