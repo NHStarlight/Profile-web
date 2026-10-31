@@ -165,4 +165,4 @@ async function registerView(vid) {
   }
 }
 
-module.exports = { getConfig, saveConfig, saveMedia, getMedia, getViewCount, registerView };
+module.exports = { getConfig, saveConfig, saveMedia, getMedia, getViewCount, registerView, getSql };
