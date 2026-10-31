@@ -9,6 +9,9 @@
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1.js" }
+    { "src": "/api/staff-apply/list", "dest": "/api/staff-apply-list.js" },
+    { "src": "/api/staff-apply/update/(.*)", "dest": "/api/staff-apply-update.js" },
+    { "src": "/api/test-result", "dest": "/api/test-result.js" },
+    { "src": "/api/staff-apply", "dest": "/api/staff-apply.js" }
   ]
 }
