@@ -2,21 +2,39 @@ const { getSql } = require('./_lib/db');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
+  res.setHeader('Cache-Control', 'no-store');
 
   try {
     const sql = getSql();
     if (!sql) {
-      // Database not configured on Vercel — return empty gracefully
       return res.status(200).json({
         ok: true,
         count: 0,
         applications: [],
-        message: 'DATABASE_URL not configured on Vercel. Add it to Environment Variables to see submissions.'
+        _debug: {
+          database_url_configured: false,
+          message: 'DATABASE_URL is NOT set on Vercel. Go to Vercel Dashboard → Settings → Environment Variables and add DATABASE_URL, then redeploy.'
+        }
       });
     }
 
-    // Read from staff_submissions table (contains both application + test results)
+    // Test database connection
+    try {
+      await sql`SELECT 1 as test`;
+    } catch (connErr) {
+      return res.status(200).json({
+        ok: true,
+        count: 0,
+        applications: [],
+        _debug: {
+          database_url_configured: true,
+          database_connection_error: connErr?.message || 'Unknown connection error',
+          message: 'DATABASE_URL is set but connection failed. Check if the value is correct and the database is accessible.'
+        }
+      });
+    }
+
+    // Read from staff_submissions table
     await sql`
       CREATE TABLE IF NOT EXISTS staff_submissions (
         id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -34,6 +52,12 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       ok: true,
       count: rows.length,
+      _debug: {
+        database_url_configured: true,
+        database_connection_ok: true,
+        table_created: true,
+        rows_found: rows.length
+      },
       applications: rows.map(r => {
         const d = r.data || {};
         return {
@@ -62,6 +86,12 @@ module.exports = async (req, res) => {
 
   } catch (err) {
     console.error('[staff-apply-list] Error:', err?.message || err);
-    return res.status(500).json({ ok: false, error: err?.message || 'Lỗi server' });
+    return res.status(200).json({
+      ok: false,
+      error: err?.message || 'Lỗi server',
+      _debug: {
+        error_message: err?.message || 'Unknown error'
+      }
+    });
   }
 };
