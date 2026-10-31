@@ -155,11 +155,11 @@
       });
       resultDiv.innerHTML += mcqHtml;
 
-      // Kiểm tra đã nộp bài chưa (tránh gửi 2 lần)
-    if (localStorage.getItem('testSubmitted') === 'true') {
-      alert('Bạn đã nộp bài test rồi! Không thể gửi lại.');
-      return;
-    }
+      // Kiểm tra đã nộp bài chưa (TRỪNG LẶP - TẮT TẠM THỜI ĐỂ TEST)
+    // if (localStorage.getItem('testSubmitted') === 'true') {
+    //   alert('Bạn đã nộp bài test rồi! Không thể gửi lại.');
+    //   return;
+    // }
 
     // Gửi toàn bộ dữ liệu (ứng viên + test) đến API
       try {
