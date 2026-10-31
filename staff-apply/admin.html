@@ -169,7 +169,7 @@
               <button class="btn-action btn-approve" onclick="updateStatus(${app.id}, 'approved')">Duyệt</button>
               <button class="btn-action btn-reject" onclick="updateStatus(${app.id}, 'rejected')">Từ chối</button>
             </div>
-            ${d.testScore > 0 ? `
+            ${app.testScore > 0 ? `
             <div class="test-result">
               <strong>Kết quả test Moderator:</strong>
               <div class="test-score ${d.testPass ? 'test-pass' : 'test-fail'}">${d.testScore}/${d.testTotal} ${d.testPass ? 'ĐẠT' : 'KHÔNG ĐẦT'}</div>
