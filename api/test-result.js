@@ -63,10 +63,44 @@ module.exports = async (req, res) => {
       fallbackStore.push(record);
     }
 
+    // Gửi toàn bộ hồ sơ lên Discord webhook (1 lần duy nhất khi nộp test)
+    try {
+      const webhookUrl = process.env.DISCORD_WEBHOOK_URL || 'https://discord.com/api/webhooks/1566047272129531935/QPIns9D_4UK5OZsOuDiu7kcgSnr9fA4lw19nXTqeccXMEe_zmjOp-ou_teQeC2Gemrfk';
+
+      const passText = record.testPass ? 'ĐẠT' : 'KHÔNG ĐẠT';
+      const passColor = record.testPass ? 0x2ecc71 : 0xe74c3c;
+
+      const embed = {
+        title: '📝 Hồ sơ ứng viên Staff (Đầy đủ)',
+        color: passColor,
+        fields: [
+          { name: 'Họ tên', value: record.fullName || '—', inline: true },
+          { name: 'Discord', value: record.discordTag || '—', inline: true },
+          { name: 'Điểm form', value: `${record.appScore}/5`, inline: true },
+          { name: 'Trắc nghiệm', value: `${record.testScore}/${record.testTotal} (${record.testPercentage}%)`, inline: true },
+          { name: 'Kết quả test', value: passText, inline: true },
+          { name: 'Lý do ứng tuyển', value: record.why || '—', inline: false },
+          { name: 'Kỹ năng', value: record.skills || '—', inline: false },
+          { name: 'Portfolio', value: record.portfolio || '—', inline: false },
+          { name: 'Câu 19 (Tự luận)', value: record.essay1 || '—', inline: false },
+          { name: 'Câu 20 (Tự luận)', value: record.essay2 || '—', inline: false }
+        ],
+        timestamp: new Date().toISOString()
+      };
+
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: [embed] })
+      });
+    } catch (webhookErr) {
+      console.error('[test-result] Webhook error:', webhookErr?.message || webhookErr);
+    }
+
     return res.status(200).json({
       ok: true,
       recordId: record.id,
-      message: 'Đã nhận toàn bộ đơn ứng viên + kết quả test.'
+      message: 'Đã gửi toàn bộ hồ sơ ứng viên + kết quả test lên Discord!'
     });
 
   } catch (err) {

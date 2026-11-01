@@ -183,7 +183,7 @@
 
         const respData = await resp.json();
         if (respData.ok) {
-          resultDiv.innerHTML += '<p style="color: var(--accent); margin-top: 1rem;"><strong>✓ Đã gửi toàn bộ đơn ứng viên + kết quả test thành công!</strong></p>';
+          resultDiv.innerHTML += '<p style="color: var(--accent); margin-top: 1rem;"><strong>✓ Đã gửi toàn bộ hồ sơ ứng viên + kết quả test lên Discord!</strong></p>';
           // Đánh dấu đã nộp để tránh gửi lại
           localStorage.setItem('testSubmitted', 'true');
         } else {
