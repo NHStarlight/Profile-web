@@ -6,38 +6,69 @@
   <title>Test Tuyển Moderator Discord</title>
   <link rel="stylesheet" href="../style.css">
   <style>
-    .test-container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .test-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; }
-    .test-card h2 { color: var(--accent); text-align: center; margin-bottom: 1.5rem; font-size: 1.8rem; }
-    .question { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .question h3 { color: var(--text); margin-bottom: 0.8rem; font-size: 1rem; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; }
+    :root { --db: #5865F2; --dbh: #4752C4; --dg: #43B581; --dr: #ED4245; --dgray: #99AAB5; --discord-white: #FFFFFF; }
+    body { font-family: 'gg sans', 'Noto Sans', 'Roboto', 'Segoe UI', sans-serif; background: var(--bg); }
+    .test-container { max-width: 820px; margin: 0 auto; padding: 2rem 1rem; }
+    .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; }
+    .test-header h2 { color: var(--discord-white); font-size: 1.75rem; margin: 0; }
+    .timer-info { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; min-width: 140px; }
+    .timer { font-size: 1.5rem; font-weight: 700; color: var(--db); font-variant-numeric: tabular-nums; }
+    .timer.warning { color: var(--dr); animation: blink 1s infinite; }
+    .progress-text { font-size: 0.85rem; color: var(--dgray); font-weight: 500; }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.5; } }
+    .progress-container { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.06); }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--db), #4752C4); width: 100%; transition: width 0.3s ease; }
+    .progress-bar.warning { background: linear-gradient(90deg, var(--dr), #c13e41); }
+    .test-card { background: rgba(35, 39, 42, 0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
+    .test-card h2 { color: var(--discord-white); text-align: center; margin-bottom: 1.5rem; font-size: 1.8rem; }
+    .test-card p { color: var(--dgray); margin-bottom: 0.5rem; font-size: 0.95rem; }
+    .question { margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .question h3 { color: var(--discord-white); margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600; line-height: 1.4; }
     .options { display: flex; flex-direction: column; gap: 0.5rem; }
-    .option { padding: 0.6rem 1rem; background: rgba(0,0,0,0.3); border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-    .option:hover { background: rgba(255,255,255,0.1); }
-    .option.selected { background: var(--accent); color: var(--bg); }
-    .essay { margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; }
-    .essay h3 { color: var(--accent); margin-bottom: 1rem; }
-    .essay textarea { width: 100%; min-height: 120px; padding: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: var(--text); font-family: 'Courier New', monospace; resize: vertical; }
-    .btn-submit { width: 100%; padding: 0.9rem 1rem; background: var(--accent); color: var(--bg); border: none; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; transition: background 0.3s; }
-    .btn-submit:hover { background: #e6e6e6; }
-    .result { margin-top: 2rem; padding: 1.5rem; border-radius: 8; display: none; }
-    .result.correct { background: rgba(46, 204, 113, 0.2); color: var(--accent); }
-    .result.wrong { background: rgba(192, 57, 43, 0.2); color: #e74c3c; }
-    .score { font-size: 2rem; font-weight: bold; margin: 1rem 0; }
-    .progress { width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 1rem; }
-    .app-info { background: rgba(0,0,0,0.3); border-radius: 6px; padding: 1rem; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.1); }
-    .app-info h4 { color: var(--accent); margin-bottom: 0.5rem; }
-    .app-info p { font-size: 0.9rem; color: var(--muted); margin: 0.3rem 0; }
+    .option { display: flex; align-items: center; padding: 0.85rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; cursor: pointer; transition: all 0.15s ease; color: var(--discord-white); font-size: 0.95rem; }
+    .option:hover { background: rgba(88, 101, 242, 0.08); border-color: rgba(88, 101, 242, 0.4); transform: translateX(4px); }
+    .option.selected { background: rgba(88, 101, 242, 0.15); border-color: var(--db); color: var(--db); }
+    .option.correct { background: rgba(67, 181, 129, 0.15); border-color: var(--dg); color: var(--dg); }
+    .option.wrong { background: rgba(237, 66, 69, 0.15); border-color: var(--dr); color: var(--dr); }
+    .opt-letter { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 6px; background: rgba(255,255,255,0.06); margin-right: 0.75rem; font-weight: 700; font-size: 0.9rem; color: var(--dgray); }
+    .option.selected .opt-letter { background: var(--db); color: #fff; }
+    .option.correct .opt-letter { background: var(--dg); color: #fff; }
+    .option.wrong .opt-letter { background: var(--dr); color: #fff; }
+    .essay { margin-top: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+    .essay h3 { color: var(--db); margin-bottom: 1rem; font-size: 1.1rem; }
+    .essay textarea { width: 100%; min-height: 140px; padding: 1rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: var(--discord-white); font-family: inherit; font-size: 0.95rem; resize: vertical; transition: border-color 0.2s; }
+    .essay textarea:focus { outline: none; border-color: var(--db); }
+    .btn-submit { width: 100%; padding: 1rem 1.5rem; background: var(--db); color: #fff; border: none; border-radius: 10px; font-family: inherit; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1.5rem; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+    .btn-submit:hover:not(:disabled) { background: var(--dbh); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .result { margin-top: 2rem; padding: 1.5rem; border-radius: 12px; display: none; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .result.correct { background: rgba(67, 181, 129, 0.12); border: 1px solid rgba(67, 181, 129, 0.3); }
+    .result.wrong { background: rgba(237, 66, 69, 0.12); border: 1px solid rgba(237, 66, 69, 0.3); }
+    .score { font-size: 2.25rem; font-weight: 800; margin: 0.5rem 0; color: var(--discord-white); }
+    .result.correct .score { color: var(--dg); }
+    .result.wrong .score { color: var(--dr); }
+    .result h4 { color: var(--discord-white); margin: 1rem 0 0.5rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
+    .result p { color: var(--dgray); margin: 0.35rem 0; font-size: 0.95rem; line-height: 1.5; }
+    .app-info { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; }
+    .app-info h4 { color: var(--db); margin-bottom: 0.5rem; font-size: 1rem; }
+    .app-info p { font-size: 0.9rem; color: var(--dgray); margin: 0.25rem 0; }
   </style>
 </head>
 <body>
 
   <div class="test-container">
     <div class="test-card">
-      <h2>Test Tuyển Moderator Discord</h2>
-      <p>Thời gian: 30 phút | 18 Trắc nghiệm + 2 Tự luận</p>
-      <p>Điểm Pass: 12/18 (66.7%)</p>
-      
+      <div class="test-header">
+        <h2>Test Tuyển Moderator Discord</h2>
+        <div class="timer-info">
+          <span class="timer" id="timer">30:00</span>
+          <span class="progress-text" id="progress-text">Câu 0/18</span>
+        </div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
       <!-- Thông tin ứng viên đã đăng ký -->
       <div id="app-info" class="app-info" style="display: none;">
         <h4>📋 Thông tin ứng viên</h4>
@@ -56,112 +87,154 @@
           <h3>Câu 20: Điều quan trọng nhất</h3>
           <textarea id="essay2" placeholder="Theo bạn, điều quan trọng nhất giúp Mod được thành viên tôn trọng và tin tưởng là gì?..." required></textarea>
         </div>
-        <button type="submit" class="btn-submit">Nộp bài test</button>
+        <button type="submit" class="btn-submit" id="submitBtn">Nộp bài test</button>
       </form>
       <div id="result" class="result" style="display: none;"></div>
     </div>
   </div>
 
   <script>
-    // Câu hỏi trắc nghiệm
     const questions = [
-      { q: '1 Độ tuổi tối thiểu được phép sử dụng Discord theo Điều khoản Dịch vụ?', options: ['10 tuổi', '13 tuổi', '16 tuổi', '18 tuổi'], answer: 1 },
-      { q: '2 Thời gian Timeout tối đa mà Discord cho phép áp dụng?', options: ['7 ngày', '14 ngày', '28 ngày', 'Vĩnh viễn'], answer: 2 },
-      { q: '3 Quyền nào cho phép xóa tin nhắn của thành viên khác?', options: ['Manage Server', 'Manage Messages', 'Moderate Members', 'Read History'], answer: 1 },
-      { q: '4 Tính năng nào giúp giảm spam tin nhắn trên kênh?', options: ['Slowmode', 'Audit Log', 'Verification', 'Announcement'], answer: 0 },
-      { q: '5 Audit Log trên Discord dùng làm gì?', options: ['Xem tin nhắn riêng', 'Xem lịch sử hoạt động quản trị', 'Theo dõi thành viên online', 'Quản lý bạn bè'], answer: 1 },
-      { q: '6 Khác biệt chính giữa Kick và Ban?', options: ['Kick chỉ đuổi ra, Ban chặn hoàn toàn', 'Ban chỉ hiệu lực 7 ngày', 'Hoàn toàn giống nhau', 'Kick vĩnh viễn'], answer: 0 },
-      { q: '7 Tại sao Mod cần bật Xác minh 2 yếu tố (2FA)?', options: ['Đăng nhập nhanh hơn', 'Bảo vệ tài khoản & server', 'Đổi tên dễ hơn', 'Nhận Nitro miễn phí'], answer: 1 },
-      { q: '8 Nguyên tắc phân cấp Vai trò (Role Hierarchy)?', options: ['Vai trò trên quản lý được vai trò dưới', 'Vai trò dưới có thể xóa vai trò trên', 'Tất cả vai trò bằng nhau', 'Chỉ Admin có quyền'], answer: 0 },
-      { q: '9 Thành viên gửi biểu tượng vô nghĩa gây nhiễu kênh, xử lý phù hợp nhất?', options: ['Ban ngay lập tức', 'Bỏ qua', 'Xóa tin → Nhắc nhở → Timeout', 'Chửi lại họ'], answer: 2 },
-      { q: '10 Phát hiện link lừa đảo Nitro miễn phí, hành động đầu tiên?', options: ['Nhắn tin hỏi thử', 'Xóa link + xử lý theo luật', 'Đợi Admin', 'Thử nhấn vào xem'], answer: 1 },
-      { q: '11 Hai thành viên cãi nhau công khai, bạn sẽ?', options: ['Tham gia bình luận ai đúng Yêu cầu dừng → Mời nói riêng → Xử lý tiếp theo', 'Khóa vĩnh viễn cả hai', 'Bỏ qua cho tự giải quyết', 'Chuyển kênh khác'], answer: 1 },
-      { q: '12 Thành viên gửi nội dung không phù hợp?', options: ['Xóa ngay + giải thích quy tắc', 'Bỏ qua', 'Chờ 1 giờ rồi xóa', 'Chuyển nội dung sang kênh khác'], answer: 0 },
-      { q: '13 Server bị Raid — nhiều tài khoản mới gửi tin rác?', options: ['Tắt máy đi ngủ', 'Nâng cấp xác minh + tạm khóa kênh', 'Trả lời từng người', 'Xóa server luôn'], answer: 1 },
-      { q: '14 Thành viên bị cấm tạo tài khoản phụ (Ban Evading)?', options: ['Bỏ qua vì tài khoản khác', 'Vi phạm nặng — cấm tất cả tài khoản liên quan', 'Chỉ nhắc nhở', 'Mute 1 giờ'], answer: 1 },
-      { q: '15 Khi nào sử dụng lệnh tạm khóa kênh (Lock Channel)?', options: ['Mọi lúc', 'Có xung đột lớn hoặc bị tấn công', 'Khi không ai online', 'Cuối tuần'], answer: 1 },
-      { q: '16 Ghi rõ lý do khi ban/timeout quan trọng vì?', options: ['Để có bằng chứng & lưu vết', 'Chỉ để làm thủ tục', 'yêu cầu bắt buộc', 'Để thành viên không hỏi lại'], answer: 0 },
-      { q: '17 Bạn thân vi phạm quy tắc server, bạn sẽ?', options: ['Bỏ qua cho bạn', 'Xử lý như mọi thành viên khác', 'Chỉ nhắc nhẹ', 'Thông báo cho người khác biết'], answer: 1 },
-      { q: '18 Chia sẻ thông tin cá nhân (Doxxing) không được phép?', options: ['Vi phạm nặng — xóa ngay + cấm vĩnh viễn', 'Chỉ cần nhắc nhở', 'Không phải vi phạm', 'Mute 10 phút'], answer: 0 }
+      { q: 'Độ tuổi tối thiểu được phép sử dụng Discord theo Điều khoản Dịch vụ?', options: ['10 tuổi', '13 tuổi', '16 tuổi', '18 tuổi'], answer: 1 },
+      { q: 'Thời gian Timeout tối đa mà Discord cho phép áp dụng?', options: ['7 ngày', '14 ngày', '28 ngày', 'Vĩnh viễn'], answer: 2 },
+      { q: 'Quyền nào cho phép xóa tin nhắn của thành viên khác?', options: ['Manage Server', 'Manage Messages', 'Moderate Members', 'Read History'], answer: 1 },
+      { q: 'Tính năng nào giúp giảm spam tin nhắn trên kênh?', options: ['Slowmode', 'Audit Log', 'Verification', 'Announcement'], answer: 0 },
+      { q: 'Audit Log trên Discord dùng làm gì?', options: ['Xem tin nhắn riêng', 'Xem lịch sử hoạt động quản trị', 'Theo dõi thành viên online', 'Quản lý bạn bè'], answer: 1 },
+      { q: 'Khác biệt chính giữa Kick và Ban?', options: ['Kick chỉ đuổi ra, Ban chặn hoàn toàn', 'Ban chỉ hiệu lực 7 ngày', 'Hoàn toàn giống nhau', 'Kick vĩnh viễn'], answer: 0 },
+      { q: 'Tại sao Mod cần bật Xác minh 2 yếu tố (2FA)?', options: ['Đăng nhập nhanh hơn', 'Bảo vệ tài khoản & server', 'Đổi tên dễ hơn', 'Nhận Nitro miễn phí'], answer: 1 },
+      { q: 'Nguyên tắc phân cấp Vai trò (Role Hierarchy)?', options: ['Vai trò trên quản lý được vai trò dưới', 'Vai trò dưới có thể xóa vai trò trên', 'Tất cả vai trò bằng nhau', 'Chỉ Admin có quyền'], answer: 0 },
+      { q: 'Thành viên gửi biểu tượng vô nghĩa gây nhiễu kênh, xử lý phù hợp nhất?', options: ['Ban ngay lập tức', 'Bỏ qua', 'Xóa tin → Nhắc nhở → Timeout', 'Chửi lại họ'], answer: 2 },
+      { q: 'Phát hiện link lừa đảo Nitro miễn phí, hành động đầu tiên?', options: ['Nhắn tin hỏi thử', 'Xóa link + xử lý theo luật', 'Đợi Admin', 'Thử nhấn vào xem'], answer: 1 },
+      { q: 'Hai thành viên cãi nhau công khai, bạn sẽ?', options: ['Yêu cầu dừng → Mời nói riêng → Xử lý tiếp theo', 'Khóa vĩnh viễn cả hai', 'Bỏ qua cho tự giải quyết', 'Chuyển kênh khác'], answer: 0 },
+      { q: 'Thành viên gửi nội dung không phù hợp?', options: ['Xóa ngay + giải thích quy tắc', 'Bỏ qua', 'Chờ 1 giờ rồi xóa', 'Chuyển nội dung sang kênh khác'], answer: 0 },
+      { q: 'Server bị Raid — nhiều tài khoản mới gửi tin rác?', options: ['Tắt máy đi ngủ', 'Nâng cấp xác minh + tạm khóa kênh', 'Trả lời từng người', 'Xóa server luôn'], answer: 1 },
+      { q: 'Thành viên bị cấm tạo tài khoản phụ (Ban Evading)?', options: ['Bỏ qua vì tài khoản khác', 'Vi phạm nặng — cấm tất cả tài khoản liên quan', 'Chỉ nhắc nhở', 'Mute 1 giờ'], answer: 1 },
+      { q: 'Khi nào sử dụng lệnh tạm khóa kênh (Lock Channel)?', options: ['Mọi lúc', 'Có xung đột lớn hoặc bị tấn công', 'Khi không ai online', 'Cuối tuần'], answer: 1 },
+      { q: 'Ghi rõ lý do khi ban/timeout quan trọng vì?', options: ['Để có bằng chứng & lưu vết', 'Chỉ để làm thủ tục', 'yêu cầu bắt buộc', 'Để thành viên không hỏi lại'], answer: 0 },
+      { q: 'Bạn thân vi phạm quy tắc server, bạn sẽ?', options: ['Bỏ qua cho bạn', 'Xử lý như mọi thành viên khác', 'Chỉ nhắc nhẹ', 'Thông báo cho người khác biết'], answer: 1 },
+      { q: 'Chia sẻ thông tin cá nhân (Doxxing) không được phép?', options: ['Vi phạm nặng — xóa ngay + cấm vĩnh viễn', 'Chỉ cần nhắc nhở', 'Không phải vi phạm', 'Mute 10 phút'], answer: 0 }
     ];
 
-    let selectedAnswers = new Array(questions.length).fill(null);
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
 
-    // Đọc dữ liệu ứng viên từ localStorage
+    let shuffledQuestions = shuffleArray(questions).map(q => {
+      const optsWithCorrect = q.options.map((opt, i) => ({ text: opt, isCorrect: i === q.answer }));
+      const shuffledOpts = shuffleArray(optsWithCorrect);
+      const newAnsIdx = shuffledOpts.findIndex(o => o.isCorrect);
+      return { ...q, options: shuffledOpts.map(o => o.text), answer: newAnsIdx };
+    });
+
+    let selectedAnswers = new Array(shuffledQuestions.length).fill(null);
+    let timeLeft = 1800;
+    let timerInterval = null;
+    let isSubmitted = false;
+
     const appData = JSON.parse(localStorage.getItem('staffAppData') || 'null');
     const appInfoEl = document.getElementById('app-info');
     const appInfoText = document.getElementById('app-info-text');
 
     if (appData) {
       appInfoEl.style.display = 'block';
-      appInfoText.innerHTML = `
-        <strong>Họ tên:</strong> ${appData.fullName || '—'}<br>
-        <strong>Discord:</strong> ${appData.discordTag || '—'}<br>
-        <strong>Điểm ứng viên:</strong> ${appData.appScore}/5<br>
-        <strong>Đăng ký lúc:</strong> ${new Date(appData.submittedAt).toLocaleString('vi-VN')}
-      `;
+      appInfoText.innerHTML = `<strong>Họ tên:</strong> ${appData.fullName || '—'}<br><strong>Discord:</strong> ${appData.discordTag || '—'}<br><strong>Điểm ứng viên:</strong> ${appData.appScore}/5<br><strong>Đăng ký lúc:</strong> ${new Date(appData.submittedAt).toLocaleString('vi-VN')}`;
     }
 
-    function selectQuestion(qIndex, optIndex) {
-      // Chỉ xóa selected trong CÂU HỎI HIỆN TẠI, không ảnh hưởng câu khác
-      const selectedQ = document.querySelectorAll('.question')[qIndex];
-      if (selectedQ) {
-        const opts = selectedQ.querySelectorAll('.option');
-        opts.forEach(el => el.classList.remove('selected'));
-        if (opts[optIndex]) {
-          opts[optIndex].classList.add('selected');
-          selectedAnswers[qIndex] = optIndex;
-        }
+    function updateTimer() {
+      const m = Math.floor(timeLeft / 60);
+      const s = timeLeft % 60;
+      const timerEl = document.getElementById('timer');
+      const bar = document.getElementById('progress-bar');
+      timerEl.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      const pct = ((1800 - timeLeft) / 1800) * 100;
+      bar.style.width = `${pct}%`;
+      if (timeLeft <= 300) { timerEl.classList.add('warning'); bar.classList.add('warning'); }
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        timerEl.textContent = '00:00';
+        if (!isSubmitted) { alert('Hết thời gian! Bài sẽ được nộp tự động.'); document.getElementById('testForm').requestSubmit(); }
+        return;
       }
+      timeLeft--;
+    }
+    timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    function renderQuestions() {
+      const mcqSection = document.getElementById('mcq-section');
+      let html = '';
+      shuffledQuestions.forEach((q, idx) => {
+        const opts = q.options.map((opt, i) => `<div class="option" onclick="selectAnswer(${idx}, ${i})"><span class="opt-letter">${String.fromCharCode(65 + i)}</span>${opt}</div>`).join('');
+        html += `<div class="question"><h3>Câu ${idx + 1}: ${q.q}</h3><div class="options">${opts}</div></div>`;
+      });
+      mcqSection.innerHTML = html;
     }
 
-    // Render câu hỏi
-    const mcqSection = document.getElementById('mcq-section');
-    let html = '';
-    questions.forEach((q, idx) => {
-      const opts = q.options.map((opt, i) => `
-        <div class="option" onclick="selectQuestion(${idx}, ${i})">
-          ${String.fromCharCode(65 + i)}. ${opt}
-        </div>`).join('');
-      html += `<div class="question"><h3>${q.q}</h3><div class="options">${opts}</div></div>`;
-    });
-    mcqSection.innerHTML = html;
+    window.selectAnswer = function(qIndex, optIndex) {
+      const qs = document.querySelectorAll('.question');
+      const sq = qs[qIndex];
+      if (!sq) return;
+      const opts = sq.querySelectorAll('.option');
+      opts.forEach(o => o.classList.remove('selected'));
+      opts[optIndex].classList.add('selected');
+      selectedAnswers[qIndex] = optIndex;
+    };
+
+    // Render câu hỏi ban đầu
+    renderQuestions();
 
     // Submit form
     document.getElementById('testForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const mcqAnswers = selectedAnswers;
+      if (isSubmitted) return;
+      isSubmitted = true;
+      clearInterval(timerInterval);
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Đang nộp...';
+
       const essay1 = document.getElementById('essay1').value.trim();
       const essay2 = document.getElementById('essay2').value.trim();
 
       let correct = 0;
-      questions.forEach((q, i) => {
-        if (mcqAnswers[i] === q.answer) correct++;
+      shuffledQuestions.forEach((q, i) => {
+        if (selectedAnswers[i] === q.answer) correct++;
       });
-      const total = questions.length;
+      const total = shuffledQuestions.length;
       const percentage = Math.round((correct / total) * 100);
       const pass = correct >= 12;
 
       const resultDiv = document.getElementById('result');
       resultDiv.style.display = 'block';
       resultDiv.className = `result ${pass ? 'correct' : 'wrong'}`;
-      resultDiv.innerHTML = `<div class="score">Đúng: ${correct}/${total}</div><div>Phần trăm: ${percentage}%</div><div>${pass ? 'CHẮC - Đạt yêu cầu!' : 'THẤT - Cần làm lại'}</div>`;
+      resultDiv.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;"><div style="font-size:1rem;font-weight:600;color:var(--dgray);">Kết quả</div><div style="font-size:1rem;font-weight:600;color:var(--dgray);">${pass ? 'ĐẠT' : 'CHƯA ĐẠT'}</div></div><div class="score">Đúng: ${correct}/${total}</div><div style="font-size:1.1rem;color:var(--dgray);">Phần trăm: ${percentage}%</div><div style="font-weight:600;margin-top:0.5rem;">${pass ? '✓ Chúc mừng bạn đã đạt yêu cầu Moderator!' : '✗ Bạn chưa đạt yêu cầu, hãy cố gắng lại.'}</div>`;
 
-      // Show MCQ results
-      let mcqHtml = '<h4>Kết quả chi tiết:</h4>';
-      questions.forEach((q, i) => {
-        const isCorrect = mcqAnswers[i] === q.answer;
-        mcqHtml += `<p><strong>Câu ${i + 1}:</strong> ${isCorrect ? 'Đúng' : 'Sai'} (Bạn chọn: ${String.fromCharCode(65 + mcqAnswers[i]) || 'Không chọn'})</p>`;
+      let mcqHtml = '<h4>Chi tiết từng câu:</h4>';
+      shuffledQuestions.forEach((q, i) => {
+        const isCorrect = selectedAnswers[i] === q.answer;
+        const userChoice = selectedAnswers[i] !== null ? String.fromCharCode(65 + selectedAnswers[i]) : 'Không chọn';
+        mcqHtml += `<p><strong>Câu ${i + 1}:</strong> ${isCorrect ? '✓ Đúng' : '✗ Sai'} — Bạn chọn: <strong>${userChoice}</strong>, Đáp án đúng: <strong>${String.fromCharCode(65 + q.answer)}</strong></p>`;
       });
       resultDiv.innerHTML += mcqHtml;
 
-      // Kiểm tra đã nộp bài chưa (TRỪNG LẶP - TẮT TẠM THỜI ĐỂ TEST)
-    // if (localStorage.getItem('testSubmitted') === 'true') {
-    //   alert('Bạn đã nộp bài test rồi! Không thể gửi lại.');
-    //   return;
-    // }
+      shuffledQuestions.forEach((q, i) => {
+        const qs = document.querySelectorAll('.question');
+        const sq = qs[i];
+        if (!sq) return;
+        const opts = sq.querySelectorAll('.option');
+        opts.forEach((opt, optIdx) => {
+          opt.classList.remove('selected');
+          if (optIdx === q.answer) { opt.classList.add('correct'); }
+          else if (optIdx === selectedAnswers[i] && selectedAnswers[i] !== q.answer) { opt.classList.add('wrong'); }
+        });
+      });
 
-    // Gửi toàn bộ dữ liệu (ứng viên + test) đến API
       try {
         const submitData = {
           application: appData || null,
@@ -171,7 +244,7 @@
           testPass: pass,
           essay1: essay1,
           essay2: essay2,
-          mcqAnswers: mcqAnswers,
+          mcqAnswers: selectedAnswers,
           submittedAt: new Date().toISOString()
         };
 
@@ -183,8 +256,7 @@
 
         const respData = await resp.json();
         if (respData.ok) {
-          resultDiv.innerHTML += '<p style="color: var(--accent); margin-top: 1rem;"><strong>✓ Đã gửi toàn bộ hồ sơ ứng viên + kết quả test lên Discord!</strong></p>';
-          // Đánh dấu đã nộp để tránh gửi lại
+          resultDiv.innerHTML += '<p style="color: var(--dg); margin-top: 1rem;"><strong>✓ Đã gửi toàn bộ hồ sơ ứng viên + kết quả test lên Discord!</strong></p>';
           localStorage.setItem('testSubmitted', 'true');
         } else {
           resultDiv.innerHTML += `<p style="color: #ff8888; margin-top: 1rem;"><strong>⚠ Gửi kết quả test gặp lỗi: ${respData.error || 'Không known'}</strong></p>`;
@@ -194,7 +266,6 @@
         resultDiv.innerHTML += '<p style="color: #ffd600; margin-top: 1rem;"><strong>⚠ Không thể gửi kết quả test đến server. Vui lòng liên hệ admin trực tiếp.</strong></p>';
       }
 
-      // Xóa localStorage sau khi gửi
       localStorage.removeItem('staffAppData');
     });
   </script>
