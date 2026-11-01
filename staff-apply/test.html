@@ -145,6 +145,19 @@
       appInfoText.innerHTML = `<strong>Họ tên:</strong> ${appData.fullName || '—'}<br><strong>Discord:</strong> ${appData.discordTag || '—'}<br><strong>Điểm ứng viên:</strong> ${appData.appScore}/5<br><strong>Đăng ký lúc:</strong> ${new Date(appData.submittedAt).toLocaleString('vi-VN')}`;
     }
 
+    // ---- ANTI MULTIPLE SUBMIT: nếu đã nộp rồi thì khóa toàn bộ form ----
+    if (localStorage.getItem('testSubmitted') === 'true') {
+      isSubmitted = true;
+      clearInterval(timerInterval);
+      document.getElementById('timer').textContent = '00:00';
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').textContent = '✓ Đã nộp bài rồi';
+      const mcqSection = document.getElementById('mcq-section');
+      if (mcqSection) mcqSection.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--dgray);"><p style="font-size:1.1rem;font-weight:600;">Bạn đã nộp bài test rồi!</p><p>Không thể gửi lại. Vui lòng liên hệ admin nếu cần hỗ trợ.</p></div>';
+      const resultDiv = document.getElementById('result');
+      if (resultDiv) { resultDiv.style.display = 'block'; resultDiv.className = 'result correct'; resultDiv.innerHTML = '<div class="score">Trạng thái: Đã nộp</div><p>Dữ liệu của bạn đã được gửi lên hệ thống.</p>'; }
+    }
+
     function updateTimer() {
       const m = Math.floor(timeLeft / 60);
       const s = timeLeft % 60;
